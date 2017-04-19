@@ -1,0 +1,94 @@
+#include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <iostream>
+
+/*Tymczasowo*/
+#define IPV6_AGENT "fe80::a00:27ff:fedf:2f0b" 
+#define PORT_AGENT 7777
+#define LOCAL_INTERFACE_INDEX 2
+
+int agentInitialization(int, char*);
+int closeAgent(int);
+int newConnection(int, int);
+std::string receiveInformation(int, char*);
+int sendInformation(int, char*);
+int closeConnection(int);
+
+int main(){
+	int mainSocket, newSocket;
+	char buffer[1024];
+	std::string msg;
+
+	mainSocket = agentInitialization(mainSocket, buffer);
+	newSocket = newConnection(newSocket, mainSocket);
+
+	do {
+		msg = receiveInformation(newSocket, buffer);
+	} while (msg != "quit");
+
+	closeConnection(newSocket);
+	closeAgent(mainSocket);
+}
+
+int agentInitialization(int mainSocket, char* buffer)
+{
+	struct sockaddr_in6 serverAddr;
+	socklen_t addr_size;
+
+	mainSocket = socket(AF_INET6, SOCK_STREAM, 0);
+	
+	memset(&serverAddr, 0, sizeof(serverAddr));				
+	serverAddr.sin6_family = AF_INET6;					
+	serverAddr.sin6_port = htons(PORT_AGENT);
+	serverAddr.sin6_scope_id = LOCAL_INTERFACE_INDEX;
+	inet_pton(AF_INET6,IPV6_AGENT, &serverAddr.sin6_addr);
+
+	bind(mainSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
+
+	if(listen(mainSocket,5)==0)
+		printf("Waiting...\n");
+	else
+		printf("Error: listen function\n");
+
+	return mainSocket;
+}
+
+int newConnection(int newSocket, int mainSocket)
+{
+	newSocket = accept(mainSocket, NULL, NULL);
+	return newSocket;
+}
+
+std::string receiveInformation(int newSocket, char* buffer)
+{
+	std::string answer;
+	recv(newSocket, buffer, 1024, 0);
+	answer = buffer;
+	printf("%s\n",buffer);
+	sendInformation(newSocket, buffer);
+	return answer;
+}
+
+int sendInformation(int newSocket, char* buffer)
+{
+	strcpy(buffer,"Received!\n");
+	send(newSocket,buffer,13,0);
+	return 0;
+}
+
+int closeConnection(int newSocket)
+{
+	close(newSocket);
+}
+
+int closeAgent(int mainSocket)
+{
+	close(mainSocket);
+	exit(0);
+}
+
