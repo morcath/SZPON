@@ -1,3 +1,11 @@
+/**
+ * Klawa wykonawcza wirtualnej maszyny
+ * @author Marcin Janeczko
+ * @zespol: Aleksander Tym, Marcin Janeczko, Aleksandra Rybak, Katarzyna Romasevska, Bart³omiej PrzewoŸniak
+ * @data: kwiecien-maj 2017
+ * Program jest czescia projektu SZPON
+ */
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -190,7 +198,34 @@ public class VirtualMachine {
 			heating = true;
 			break;
 		}
+		case 3: //otrzymano sygna³ rozpoczêcia pomiarów
+		{
+				System.out.println("NIE PODANO PARAMETROW POMIARU!!!");
+				alertLabel.setText("NIE PODANO PARAMETROW POMIARU!!!");
+				//TODO: czy cos tu jeszcze???
+			break;
 		}
+		case 4: //otrzymano sygna³ zakoñczenia pomiarów
+		{
+			measure = false;
+			//TODO: wyslac liste "temperaturesList" jakos
+			break;
+		}
+		}
+	}
+	
+	public void sigRecv(int sigNo, int minTemp, int maxTemp)
+	{
+		if (sigNo == 3)
+		{
+				try {
+					simulate(0,10);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				} 
+		}
+		else
+			sigRecv (sigNo);
 	}
 
 }

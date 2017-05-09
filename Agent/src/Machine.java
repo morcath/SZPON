@@ -1,3 +1,10 @@
+/**
+ * Glowna klasa programu symulujacego pomiary temperatury w zbiorniku (maszyna wirtualna)
+ * @author Marcin Janeczko
+ * @zespol: Aleksander Tym, Marcin Janeczko, Aleksandra Rybak, Katarzyna Romasevska, Bart≥omiej Przewoüniak
+ * @data: kwiecien-maj 2017
+ * Program jest czescia projektu SZPON
+ */
 
 public class Machine {
 
