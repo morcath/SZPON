@@ -5,7 +5,6 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <iostream>
-#include <sstream>
 
 #define END_WORK 0
 #define CONNECT_WITH_AGENT 1
