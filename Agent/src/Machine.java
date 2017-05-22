@@ -6,7 +6,7 @@ import java.util.Scanner;
 /**
  * Glowna klasa programu symulujacego pomiary temperatury w zbiorniku (maszyna wirtualna)
  * @author Marcin Janeczko
- * @zespol: Aleksander Tym, Marcin Janeczko, Aleksandra Rybak, Katarzyna Romasevska, Bart³omiej PrzewoŸniak
+ * @zespol: Aleksander Tym, Marcin Janeczko, Aleksandra Rybak, Katarzyna Romasevska, Bartlomiej Przewozniak
  * @data: kwiecien-maj 2017
  * Program jest czescia projektu SZPON
  */
@@ -15,11 +15,11 @@ public class Machine {
 
 	public static void main(String[] args) throws InterruptedException
 	{
-		System.out.println("Œrodowisko maszyny wirtualnej uruchomione pomyœlnie.\ninicjujê maszynê wirtualn¹...");
+		System.out.println("Srodowisko maszyny wirtualnej uruchomione pomyslnie.\ninicjuje maszyne wirtualna...");
 		VirtualMachine VM = new VirtualMachine();
 		ArrayList<Integer> params = new ArrayList<Integer>();
 		
-		//Cykliczne sprawdzanie nowycch poleceñ
+		//Cykliczne sprawdzanie nowycch polecen
 		while (VM.onLine)
 		{
 			params.clear();
@@ -28,7 +28,7 @@ public class Machine {
 			
 			try
 			{
-				Scanner scanner = new Scanner(new File (System.getProperty("user.dir")+"/src/in.txt"));
+				Scanner scanner = new Scanner(new File (System.getProperty("user.dir")+"/in"));
 				while(scanner.hasNextLine())
 				{
 					paramsString = scanner.nextLine();
@@ -40,7 +40,7 @@ public class Machine {
 			}
 			catch (FileNotFoundException e)
 			{
-				System.out.println("B£¥D OTWARCIA PLIKU Z POLECENIAMI! NIE MOZNA NAWI¥ZAÆ PO£¥CZENIA Z AGENTEM");
+				System.out.println("BLAD OTWARCIA PLIKU Z POLECENIAMI! NIE MOZNA NAWIAZAC POLACZENIA Z AGENTEM");
 				continue;
 			}
 			if (params.size() == 1 ) 
@@ -48,7 +48,7 @@ public class Machine {
 			else if (params.size()== 3) 
 				VM.sigRecv(params.get(0),params.get(1),params.get(2));
 			else
-				System.out.println("PLIK Z POLECENIAMI JEST USZKODZONY!!!!!!!!!!!11111jedenjedenjedenjedenaœciejeden " + params.size());
+				System.out.println("PLIK Z POLECENIAMI JEST USZKODZONY!!!!!!!!!!!11111jedenjedenjedenjedenasciejeden " + params.size());
 		}
 
 		

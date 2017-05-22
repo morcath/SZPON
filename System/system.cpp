@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <iostream>
+#include <sstream>
 
 #define END_WORK 0
 #define CONNECT_WITH_AGENT 1
@@ -12,7 +13,7 @@
 #define CLOSE_CONNECTION_WITH_AGENT 3
 
 /*Tymczasowo*/
-#define IPV6_AGENT "fe80::a00:27ff:fedf:2f0b" 
+#define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93" 
 #define PORT_AGENT 7777
 #define LOCAL_INTERFACE_INDEX 2
 
@@ -75,7 +76,12 @@ int connectToAgent()
 	struct sockaddr_in6 agentAddr;    					
 	socklen_t addr_size;
 	
-	systemSocket = socket(AF_INET6, SOCK_STREAM, 0);			
+	systemSocket = socket(AF_INET6, SOCK_STREAM, 0);
+	if(systemSocket == -1)
+	{
+		perror("opening stream socket");
+		exit(1);
+	}			
   
 	/* Uzupełnianie struktury sockaddr_in6 */
 	memset(&agentAddr, 0, sizeof(agentAddr));				
@@ -98,7 +104,11 @@ int connectToAgent()
 int receiveInformation(int systemSocket, char* buffer)
 {
 	
-	recv(systemSocket, buffer, 1024, 0);
+	if (recv(systemSocket, buffer, 1024, 0) == -1)
+	{
+		perror("Receiving problem");
+		exit(1);
+	}
 	printf("%s",buffer);
 	return 0;
 }
@@ -107,7 +117,8 @@ int sendInformation(int systemSocket, char* buffer)
 {
 	std::string request;
 	do {
-		std::cout << ">>> ";
+		
+		std::cout << ">>>";
 		std::cin >> request;
 		strcpy(buffer, request.c_str());
 		send(systemSocket,buffer,request.size()+1,0);
@@ -120,7 +131,11 @@ int sendInformation(int systemSocket, char* buffer)
 
 int closeConnectionWithAgent(int systemSocket)
 {
-	close(systemSocket);
+	if (close(systemSocket) == -1)
+	{
+		perror("Closing problem!!!");
+		exit(1);
+	}
 	return 0;
 }
 
