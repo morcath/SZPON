@@ -9,7 +9,7 @@
 #include <fstream>
 
 /*Tymczasowo*/
-#define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93" 
+#define IPV6_AGENT "fe80::a00:27ff:fee9:fd39"//olka:"fe80::eea3:3ace:f5bd:af93" 
 #define PORT_AGENT 7777
 #define LOCAL_INTERFACE_INDEX 2
 
@@ -24,10 +24,13 @@ int main(){
 	int mainSocket, newSocket;
 	char buffer[1024];
 	std::string msg;
-
+	//reset wartosci w pliku przy uruchomieniu systemu
+	std::ofstream o("/home/marcin/git/SZPON/Agent/src/in");
+	o << "0" << std::endl;
+	o.close();
+	
 	mainSocket = agentInitialization(mainSocket, buffer);
 	newSocket = newConnection(newSocket, mainSocket);
-
 	do {
 		msg = receiveInformation(newSocket, buffer);
 	} while (msg != "quit");
@@ -88,7 +91,7 @@ std::string receiveInformation(int newSocket, char* buffer)
 		exit(1);
 	}
 	answer = buffer;
-	std::ofstream o("/home/aleksander/github/SZPON/Agent/src/in");
+	std::ofstream o("/home/marcin/git/SZPON/Agent/src/in");
 	std::cout << answer << std::endl;
 	o << answer << std::endl;
 	o.close();

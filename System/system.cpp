@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <iostream>
+#include <stdlib.h>
 
 #define END_WORK 0
 #define CONNECT_WITH_AGENT 1
@@ -12,7 +13,7 @@
 #define CLOSE_CONNECTION_WITH_AGENT 3
 
 /*Tymczasowo*/
-#define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93" 
+#define IPV6_AGENT "fe80::a00:27ff:fee9:fd39"//olka:"fe80::eea3:3ace:f5bd:af93"  
 #define PORT_AGENT 7777
 #define LOCAL_INTERFACE_INDEX 2
 
@@ -115,6 +116,29 @@ int receiveInformation(int systemSocket, char* buffer)
 int sendInformation(int systemSocket, char* buffer)
 {
 	std::string request;
+	
+	std::cout << "Podaj akcje:\n1 - Rozpoczecie pomiaru\n2 - Zakonczenie pomiaru\nAktiwiti: ";
+	std::cin >> request;
+	if (request == "1")
+	{
+		request = "3 ";
+		std::string min, max;
+		std::cout<<"Podaj minimalna oraz maksymalna temperature: ";
+		std::cin>>min>>max;
+		request += min;
+		request += " ";
+		request += max;
+	}
+	else if (request == "2")
+	{
+		request = "4";
+	}
+	else return 0;
+	strcpy(buffer, request.c_str());
+	send(systemSocket,buffer,request.size()+1,0);
+
+	receiveInformation(systemSocket, buffer);
+	/* kod zastany
 	do {
 		
 		std::cout << ">>>";
@@ -124,7 +148,7 @@ int sendInformation(int systemSocket, char* buffer)
 
 		receiveInformation(systemSocket, buffer);
 	} while (request != "quit");
-
+	*/
 	return 0;
 }
 
