@@ -1,7 +1,7 @@
 /**
  * Klasa wykonawcza wirtualnej maszyny
  * @author Marcin Janeczko
- * @zespol: Aleksander Tym, Marcin Janeczko, Aleksandra Rybak, Katarzyna Romasevska, Bart³omiej PrzewoŸniak
+ * @zespol: Aleksander Tym, Marcin Janeczko, Aleksandra Rybak, Katarzyna Romasevska, Bartï¿½omiej Przewoï¿½niak
  * @data: kwiecien-maj 2017
  * Program jest czescia projektu SZPON
  */
@@ -15,6 +15,18 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import javax.swing.*;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.awt.Font;
 
 public class VirtualMachine {
@@ -40,6 +52,7 @@ public class VirtualMachine {
 	boolean cooling = false; //czy dostalismy polecenie chlodzenia
 	public boolean onLine = true; //czy system jest uruchominy
 	boolean working = false; //czy maszyna teraz mierzy
+	boolean fileReady = false; //czy mamy gotowy pomiar
 	
 	int screenWidth;
 	int screenHeight;
@@ -59,7 +72,7 @@ public class VirtualMachine {
 		
 		panel.setLayout(null);
 		
-		exitB = new JButton ("Wyjœcie");
+		exitB = new JButton ("Wyjï¿½cie");
 		exitB.setBounds(595, 300, 175, 40);
 		exitB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
@@ -97,8 +110,8 @@ public class VirtualMachine {
 		alertLabel.setForeground(Color.RED);
 		panel.add(alertLabel);
 		
-		//TODO: dodaæ guziki, ogarn¹æ wykresy itp, chcemy: Label z aktualnym pomiarem, 
-		//wykres liniowy (mo¿e?), wykres s³upkowy
+		//TODO: dodaï¿½ guziki, ogarnï¿½ï¿½ wykresy itp, chcemy: Label z aktualnym pomiarem, 
+		//wykres liniowy (moï¿½e?), wykres sï¿½upkowy
 		mainFrame.getContentPane().add(panel);
 		mainFrame.setVisible(true);
 	}
@@ -111,6 +124,7 @@ public class VirtualMachine {
 			temperaturesList.add(temperature);
 			init = false;
 			working = true;
+			fileReady = false;
 		}
 	//warunki na zmiany temperatur
 		if (heating)
@@ -129,7 +143,7 @@ public class VirtualMachine {
 			else; /*if (tempRand > 45 && tempRand < 55)*/
 			/*else
 			{
-				if (1==1)//funkcja uzale¿niaj¹ca wynik losowania od akt temp
+				if (1==1)//funkcja uzaleï¿½niajï¿½ca wynik losowania od akt temp
 					++temperature;
 				else
 					--temperature;
@@ -142,12 +156,12 @@ public class VirtualMachine {
 		if (temperature >= maxTemperature)
 		{
 			alarmState = true;
-			sigSend (1);//rzuæ alarm ¿e za gor¹co
+			sigSend (1);//rzuï¿½ alarm ï¿½e za gorï¿½co
 		}
 		else if (temperature <= minTemperature)
 		{
 			alarmState = true;
-			sigSend (2);//rzuæ alarm ¿e za zimno
+			sigSend (2);//rzuï¿½ alarm ï¿½e za zimno
 		}
 		else if (alarmState && (temperature < maxTemperature - 3 || temperature > minTemperature + 3))//TODO spierdolony warunek
 		{
@@ -157,7 +171,7 @@ public class VirtualMachine {
 			sigSend (3);
 		}
 		
-	//WYŒWIETLANIE
+	//WYï¿½WIETLANIE
 		if (alarmState)
 			temperatureLabel.setForeground(Color.RED);
 		else
@@ -181,8 +195,8 @@ public class VirtualMachine {
 		}
 		case 2: //za niska temperatura
 		{
-			System.out.println("PRZECH£ODZENIE SYSTEMU!!");
-			alertLabel.setText("PRZECH£ODZENIE SYSTEMU!");
+			System.out.println("PRZECHï¿½ODZENIE SYSTEMU!!");
+			alertLabel.setText("PRZECHï¿½ODZENIE SYSTEMU!");
 		//TODO Wyslanie sygnalu ze za zimno!
 			break;
 		}
@@ -215,22 +229,71 @@ public class VirtualMachine {
 				heating = true;
 			break;
 		}
-		case 3: //otrzymano sygna³ rozpoczêcia pomiarów
+		case 3: //otrzymano sygnaï¿½ rozpoczï¿½cia pomiarï¿½w
 		{
 				System.out.println("NIE PODANO PARAMETROW POMIARU!!!");
 				alertLabel.setText("NIE PODANO PARAMETROW POMIARU!!!");
 				//TODO: czy cos tu jeszcze???
 			break;
 		}
-		case 4: //otrzymano sygna³ zakoñczenia pomiarów
+		case 4: //otrzymano sygnaï¿½ zakoï¿½czenia pomiarï¿½w
 		{
 			working = false;
 			init = true;
-			//TODO: wyslac liste "temperaturesList" jakos. XML???
-			System.out.println("Pe³na lista temperatur z pomiaru:");
-			for (int i=0; i<temperaturesList.size(); ++i)
-			{
-				System.out.print(temperaturesList.get(i)+", ");
+			if (!fileReady){
+				//generowanie pliku xml
+				try {
+			        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			        Document doc = dBuilder.newDocument();
+			        // root element
+			        Element root = doc.createElement("plik");
+			        doc.appendChild(root);
+			        
+			        //dane element
+			       
+			        Element pomiar = doc.createElement("Pomiar");
+			        root.appendChild(pomiar);
+			        
+			     
+			        
+			       for (int i=0; i<temperaturesList.size(); ++i)
+			       {	Element dane = doc.createElement("Dane");
+			       		dane.appendChild(doc.createTextNode(String.valueOf(temperaturesList.get(i))));
+			       		pomiar.appendChild(dane);
+			       }
+			       
+			       
+			    // Save the document to the disk file
+			       TransformerFactory tranFactory = TransformerFactory.newInstance();
+			       Transformer aTransformer = tranFactory.newTransformer();
+			    // format the XML nicely
+			       aTransformer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
+	
+			       aTransformer.setOutputProperty(
+			               "{http://xml.apache.org/xslt}indent-amount", "4");
+			       aTransformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			       
+			       DOMSource source = new DOMSource(doc);
+			       try {
+			           // location and name of XML file you can change as per need
+			           FileWriter fos = new FileWriter(System.getProperty("user.dir")+"/src/data.xml");
+			           StreamResult result = new StreamResult(fos);
+			           aTransformer.transform(source, result);
+	
+			       } catch (IOException e) {
+	
+			           e.printStackTrace();
+			       
+			       }
+			       StreamResult consoleResult = new StreamResult(System.out);
+			       aTransformer.transform(source, consoleResult);
+				}catch (Exception e) {
+			        e.printStackTrace();
+			     }
+				//koniec generowania
+				System.out.println("Wygenerowano plik xml");
+				fileReady = true;
 			}
 			break;
 		}
