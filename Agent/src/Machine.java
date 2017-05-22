@@ -28,11 +28,12 @@ public class Machine {
 			
 			try
 			{
-				Scanner scanner = new Scanner(new File (System.getProperty("user.dir")+"/in"));
+				Scanner scanner = new Scanner(new File (System.getProperty("user.dir")+"/src/in"));
 				while(scanner.hasNextLine())
 				{
 					paramsString = scanner.nextLine();
 					String[] strAttr = paramsString.split("\\s+");
+					//TODO: sprawdzac czy nie mamy czasem liter!
 					for (int i=0;i<strAttr.length; ++i) /**parsowanie lancuchow liczb na int*/
 						params.add(Integer.parseInt(strAttr[i]));
 				}
@@ -40,7 +41,7 @@ public class Machine {
 			}
 			catch (FileNotFoundException e)
 			{
-				System.out.println("BLAD OTWARCIA PLIKU Z POLECENIAMI! NIE MOZNA NAWIAZAC POLACZENIA Z AGENTEM");
+				System.out.println("BLAD OTWARCIA PLIKU Z POLECENIAMI! NIE MOZNA NAWIAZAC POLACZENIA Z AGENTEM. Sciezka szukanego pliku: "+System.getProperty("user.dir")+"/src/in");
 				continue;
 			}
 			if (params.size() == 1 ) 
