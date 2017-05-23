@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <fstream>
+#include <thread>
 
 /*Tymczasowo*/
 #define IPV6_AGENT "fe80::a00:27ff:fee9:fd39"//olka:"fe80::eea3:3ace:f5bd:af93" 
@@ -19,6 +20,7 @@ int newConnection(int, int);
 std::string receiveInformation(int, char*);
 int sendInformation(int, char*);
 int closeConnection(int);
+void scanDocument();
 
 int main(){
 	int mainSocket, newSocket;
@@ -28,9 +30,14 @@ int main(){
 	std::ofstream o("/home/marcin/git/SZPON/Agent/src/in");
 	o << "0" << std::endl;
 	o.close();
+	std::ofstream o("/home/marcin/git/SZPON/Agent/src/out");
+	o << "0" << std::endl;
+	o.close();
+	std::thread reader (scanDocument);
 	
 	mainSocket = agentInitialization(mainSocket, buffer);
 	newSocket = newConnection(newSocket, mainSocket);
+	
 	do {
 		msg = receiveInformation(newSocket, buffer);
 	} while (msg != "quit");
@@ -127,5 +134,31 @@ int closeAgent(int mainSocket)
 		exit(1);
 	}
 	exit(0);
+}
+
+void scanDocument()
+{
+	std::cout<<"Jestem sobie nowym watkiem, nananananana";
+	do{
+		std::ifstream fileToRead;
+		fileToRead.open("/home/marcin/git/SZPON/Agent/src/out");
+		char output;
+		if (fileToRead.is_open())
+		{
+			fileToRead >> output;
+			if (output == '1')
+				;//TU KOMUNIKAT O TYM ŻE JEST ZA GORĄCO I TRZEBA CHŁODZIĆ
+			else if (output == '2')
+				;//TU KOMUNIKAT O TYM ŻE JEST ZA ZIMNO I TRZEBA GRZAĆ
+			else if (output == '3')
+				;//TU KOMUNIKAT O TYM ŻE JEST JUŻ OK I ŻEBY SERWER PRZESTAŁ ODLICZAĆ DO EMERGENCY SHUTDOWN
+			else if (output == '4')
+				;//TU WYSŁANIE PLIKU xml
+		}
+		fileToRead.close();
+		sleep (1);
+		std::cout<<"Zyje!";
+		//std::this_thread::sleep_for (std::chrono::seconds(1));
+	}while(1);
 }
 

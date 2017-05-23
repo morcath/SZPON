@@ -1,0 +1,3 @@
+all:
+	clear
+	g++ agent.cpp -pthread -std=c++11 -o agent
