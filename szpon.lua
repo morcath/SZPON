@@ -3,7 +3,6 @@ szpon_proto = Proto("szpon","Szpon Protocol")
 function szpon_proto.dissector(buffer, pinfo, tree)
     pinfo.cols.protocol = "SZPON"
     local subtree = tree:add(szpon_proto, buffer(), "Szpon Protocol")
- -- wyzej tak jak w int
     
     local function get_next_arg(line) --zwraca pierwsze slowo, od drugiego slowa do konca
         local f_space_index = string.find(line, " ")
@@ -57,7 +56,6 @@ function szpon_proto.dissector(buffer, pinfo, tree)
     end
 end
 
--- nizej jak w int 
 -- load the tcp.port table
 tcp_table = DissectorTable.get("tcp.port")
  -- register our protocol to handle tcp port 7777
