@@ -8,35 +8,37 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <sstream>
 
-/*Tymczasowo*/
+/*STATIC IPv6 ADDRESS*/
 #define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93"//jarcin:"fe80::a00:27ff:fee9:fd39" 
+#define IPV6_SYSTEM "fe80::eea3:3ace:f5bd:af93"
 #define PORT_AGENT 7777
+#define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2
 
+void resetParameters();
 int agentInitialization(int, char*);
 int closeAgent(int);
 int newConnection(int, int);
 std::string receiveInformation(int, char*);
 int sendInformation(int, char*);
+int sendInstructions(int, char*, std::string);
 int closeConnection(int);
 void scanDocument();
+int setAlarmSocket();
+void sendFile(int, char*);
 
 int main(){
 	int mainSocket, newSocket;
 	char buffer[1024];
 	std::string msg;
-	//reset wartosci w pliku przy uruchomieniu systemu
-	std::ofstream o("src/in");
-	o << "0" << std::endl;
-	o.close();
-	std::ofstream p("src/out");
-	p << "0" << std::endl;
-	p.close();
-	std::thread reader (scanDocument);
+	resetParameters();
 	
 	mainSocket = agentInitialization(mainSocket, buffer);
 	newSocket = newConnection(newSocket, mainSocket);
+
+	std::thread reader (scanDocument);
 	
 	do {
 		msg = receiveInformation(newSocket, buffer);
@@ -44,6 +46,16 @@ int main(){
 
 	closeConnection(newSocket);
 	closeAgent(mainSocket);
+}
+
+void resetParameters()
+{
+	std::ofstream o("src/in");
+	o << "0" << std::endl;
+	o.close();
+	std::ofstream p("src/out");
+	p << "0" << std::endl;
+	p.close();
 }
 
 int agentInitialization(int mainSocket, char* buffer)
@@ -102,16 +114,16 @@ std::string receiveInformation(int newSocket, char* buffer)
 	std::cout << answer << std::endl;
 	o << answer << std::endl;
 	o.close();
+	strcpy(buffer,"Received!\n");
 	sendInformation(newSocket, buffer);
 	return answer;
 }
 
 int sendInformation(int newSocket, char* buffer)
 {
-	strcpy(buffer,"Received!\n");
-	if (send(newSocket,buffer,13,0) == -1)
+	if (send(newSocket,buffer,1024,0) == -1)
 	{
-		perror("Problem with sending information about receiving");
+		perror("Problem with sending information");
 		exit(1);
 	}
 	return 0;
@@ -138,7 +150,12 @@ int closeAgent(int mainSocket)
 
 void scanDocument()
 {
+	int alarmSocket;
+	char buffer[1024];
+	int i;
+	i = 0;
 	std::cout<<"Jestem sobie nowym watkiem, nananananana";
+	alarmSocket = setAlarmSocket();
 	do{
 		std::ifstream fileToRead;
 		fileToRead.open("src/out");
@@ -146,19 +163,80 @@ void scanDocument()
 		if (fileToRead.is_open())
 		{
 			fileToRead >> output;
-			if (output == '1')
-				;//TU KOMUNIKAT O TYM ŻE JEST ZA GORĄCO I TRZEBA CHŁODZIĆ
+			if (output == '1')	
+				sendInstructions(alarmSocket, buffer, "up\n");
 			else if (output == '2')
-				;//TU KOMUNIKAT O TYM ŻE JEST ZA ZIMNO I TRZEBA GRZAĆ
+				sendInstructions(alarmSocket, buffer, "down\n");
 			else if (output == '3')
-				;//TU KOMUNIKAT O TYM ŻE JEST JUŻ OK I ŻEBY SERWER PRZESTAŁ ODLICZAĆ DO EMERGENCY SHUTDOWN
-			else if (output == '4')
-				;//TU WYSŁANIE PLIKU xml
+				sendInstructions(alarmSocket, buffer, "ok\n");
+			else if (output == '4' and i == 0)
+			{
+				i = 1;
+				sendInstructions(alarmSocket, buffer, "xml\n");
+				sleep(1);
+				sendFile(alarmSocket, buffer);
+			}
 		}
 		fileToRead.close();
 		sleep (1);
 		std::cout<<"Zyje!";
 		//std::this_thread::sleep_for (std::chrono::seconds(1));
 	}while(1);
+}
+
+int setAlarmSocket()
+{
+	int alarmSocket;
+	struct sockaddr_in6 agentAddr;    					
+	socklen_t addr_size;
+	
+	alarmSocket = socket(AF_INET6, SOCK_STREAM, 0);
+	if(alarmSocket == -1)
+	{
+		perror("opening stream socket");
+		exit(1);
+	}			
+  
+	/* Uzupełnianie struktury sockaddr_in6 */
+	memset(&agentAddr, 0, sizeof(agentAddr));				
+	agentAddr.sin6_family = AF_INET6;					   
+	agentAddr.sin6_port = htons(PORT_ALARM);
+	agentAddr.sin6_scope_id = LOCAL_INTERFACE_INDEX;
+	inet_pton(AF_INET6,IPV6_SYSTEM, &agentAddr.sin6_addr);	
+  
+	if(connect(alarmSocket, (struct sockaddr *) &agentAddr, sizeof agentAddr) == -1)
+	{
+		printf("Connection failed!\n");
+		return 1; 
+	}
+	else
+		std::cout << "Connected!" << std::endl;
+
+	return alarmSocket;
+}
+
+int sendInstructions(int alarmSocket, char* buffer, std::string info)
+{
+	strcpy(buffer,info.c_str());
+	sendInformation(alarmSocket, buffer);
+}
+
+void sendFile(int alarmSocket, char* buffer)
+{
+	std::ifstream o("src/data.xml");
+	std::string xmlFile;
+	std::string xmlLine;
+	while(!o.eof())
+	{
+		getline(o,xmlLine);
+		xmlLine.append("\n");
+		xmlFile.append(xmlLine);
+	}
+
+	std::cout << xmlFile << std::endl;
+	o.close();
+	strcpy(buffer, xmlFile.c_str());
+	
+	sendInformation(alarmSocket, buffer);
 }
 

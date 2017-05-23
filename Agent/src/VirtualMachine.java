@@ -204,7 +204,7 @@ public class VirtualMachine {
 			System.out.println("PRZEGRZANIE SYSTEMU!!");
 			alertLabel.setText("PRZEGRZANIE SYSTEMU!");
 			try{
-			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/src/out", "UTF-8");
+			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/out", "UTF-8");
 			    writer.println("1");
 			    writer.close();
 			} catch (IOException e) {
@@ -217,7 +217,7 @@ public class VirtualMachine {
 			System.out.println("PRZECHLODZENIE SYSTEMU!!");
 			alertLabel.setText("PRZECHLODZENIE SYSTEMU!");
 			try{
-			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/src/out", "UTF-8");
+			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/out", "UTF-8");
 			    writer.println("2");
 			    writer.close();
 			} catch (IOException e) {
@@ -228,7 +228,7 @@ public class VirtualMachine {
 		case 3: //ustabilizowana temperatura
 		{
 			try{
-			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/src/out", "UTF-8");
+			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/out", "UTF-8");
 			    writer.println("3");
 			    writer.close();
 			} catch (IOException e) {
@@ -313,7 +313,7 @@ public class VirtualMachine {
 			       DOMSource source = new DOMSource(doc);
 			       try {
 			           // location and name of XML file you can change as per need
-			           FileWriter fos = new FileWriter(System.getProperty("user.dir")+"/src/data.xml");
+			           FileWriter fos = new FileWriter(System.getProperty("user.dir")+"/data.xml");
 			           StreamResult result = new StreamResult(fos);
 			           aTransformer.transform(source, result);
 	
@@ -331,7 +331,7 @@ public class VirtualMachine {
 				System.out.println("Wygenerowano plik xml");
 				fileReady = true;
 				try{
-				    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/src/out", "UTF-8");
+				    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/out", "UTF-8");
 				    writer.println("4");
 				    writer.close();
 				} catch (IOException e) {

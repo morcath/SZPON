@@ -6,37 +6,56 @@
 #include <unistd.h>
 #include <iostream>
 #include <stdlib.h>
+#include <fstream>
+#include <thread>
 
 #define END_WORK 0
 #define CONNECT_WITH_AGENT 1
 #define SEND_REQUEST_TO_AGENT 2
 #define CLOSE_CONNECTION_WITH_AGENT 3
 
-/*Tymczasowo*/
-#define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93"//jarcin:"fe80::a00:27ff:fee9:fd39"  
+/*STATIC IPv6 ADDRESS*/
+#define IPV6_SYSTEM "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_AGENT1 "fe80::eea3:3ace:f5bd:af93"//jarcin:"fe80::a00:27ff:fee9:fd39"
+#define IPV6_AGENT2 "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_AGENT3 "fe80::eea3:3ace:f5bd:af93"
 #define PORT_AGENT 7777
+#define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2
 
 void welcomeScreen();
 int menu();
-int connectToAgent();
-int receiveInformation(int, char*);
+int connectToAgent(int);
+std::string receiveInformation(int, char*);
 int sendInformation(int, char*);
 int closeConnectionWithAgent(int);
+void waitForAlarm();
+int socketAlarmInitialization(int);
+int newAlarm(int, int);
+void waitForXML(int, char*);
+int chooseAgent();
 
 int main(void)
 {
 	int systemSocket;
 	char buffer[1024];
 	int activity;	
-	
+	int agentNo;
+	std::thread reader (waitForAlarm);
 	welcomeScreen();
+	
 	do {
 		activity = menu();
+		
 		if(activity == CONNECT_WITH_AGENT)
-			systemSocket = connectToAgent();
+		{
+			agentNo = chooseAgent();
+			systemSocket = connectToAgent(agentNo);
+		}
+		
 		else if(activity == SEND_REQUEST_TO_AGENT)
 			sendInformation(systemSocket, buffer);
+		
 		else
 			activity = END_WORK;
 
@@ -58,6 +77,7 @@ void welcomeScreen()
 int menu()
 {
 	int activity;
+	
 	std::cout << std::endl;
 	std::cout << "           *** Terminal roboczy ***" << std::endl;
 	std::cout << "0 - Exit" << std::endl;
@@ -70,9 +90,10 @@ int menu()
 	return activity;
 }
 
-int connectToAgent()
+int connectToAgent(int agentNo)
 {
 	int systemSocket;
+	std::string agentAddress;
 	struct sockaddr_in6 agentAddr;    					
 	socklen_t addr_size;
 	
@@ -81,14 +102,26 @@ int connectToAgent()
 	{
 		perror("opening stream socket");
 		exit(1);
-	}			
+	}
+	
   
 	/* Uzupełnianie struktury sockaddr_in6 */
 	memset(&agentAddr, 0, sizeof(agentAddr));				
 	agentAddr.sin6_family = AF_INET6;					   
 	agentAddr.sin6_port = htons(PORT_AGENT);
 	agentAddr.sin6_scope_id = LOCAL_INTERFACE_INDEX;
-	inet_pton(AF_INET6,IPV6_AGENT, &agentAddr.sin6_addr);	
+
+	if (agentNo == 1)
+		inet_pton(AF_INET6,IPV6_AGENT1, &agentAddr.sin6_addr);
+	else if (agentNo == 2)
+		inet_pton(AF_INET6,IPV6_AGENT2, &agentAddr.sin6_addr);
+	else if (agentNo == 3)
+		inet_pton(AF_INET6,IPV6_AGENT3, &agentAddr.sin6_addr);
+	else
+	{
+		perror("Conncection failed!");
+		exit(1);
+	}	
   
 	if(connect(systemSocket, (struct sockaddr *) &agentAddr, sizeof agentAddr) == -1)
 	{
@@ -101,16 +134,16 @@ int connectToAgent()
 	return systemSocket;
 }
 
-int receiveInformation(int systemSocket, char* buffer)
+std::string receiveInformation(int systemSocket, char* buffer)
 {
-	
+	std::string information;
 	if (recv(systemSocket, buffer, 1024, 0) == -1)
 	{
 		perror("Receiving problem");
 		exit(1);
 	}
-	printf("%s",buffer);
-	return 0;
+	information = buffer;
+	return information;
 }
 
 int sendInformation(int systemSocket, char* buffer)
@@ -133,22 +166,21 @@ int sendInformation(int systemSocket, char* buffer)
 	{
 		request = "4";
 	}
-	else return 0;
+	else 
+		return 0;
+
 	strcpy(buffer, request.c_str());
 	send(systemSocket,buffer,request.size()+1,0);
 
 	receiveInformation(systemSocket, buffer);
-	/* kod zastany
-	do {
-		
-		std::cout << ">>>";
-		std::cin >> request;
-		strcpy(buffer, request.c_str());
-		send(systemSocket,buffer,request.size()+1,0);
 
-		receiveInformation(systemSocket, buffer);
-	} while (request != "quit");
-	*/
+	if (request == "4")
+	{
+		printf("Waiting for statistics...\n");
+		//receiveInformation(systemSocket, buffer);
+		printf("Statistics received!");
+	}
+
 	return 0;
 }
 
@@ -161,4 +193,107 @@ int closeConnectionWithAgent(int systemSocket)
 	}
 	return 0;
 }
+
+void waitForAlarm()
+{
+	int alarmSocket, alarmAppearSocket;
+	char buffer[1024];
+	int errorRate = 0;
+	std::string msg;
+
+	alarmSocket = socketAlarmInitialization(alarmSocket);
+	alarmAppearSocket = newAlarm(alarmAppearSocket, alarmSocket);
+	
+	do {
+		msg = receiveInformation(alarmAppearSocket, buffer);
+		if(msg == "up\n")
+			errorRate += 1;
+		else if(msg == "down\n")
+			errorRate += 1;
+		else if(msg == "ok\n")
+			errorRate = 0;
+		else if(msg == "xml\n")
+			waitForXML(alarmAppearSocket, buffer);
+		if(errorRate > 10)
+			std::cout << "SHUTDOWN" << std::endl;
+	
+	} while(1);
+	
+	close(alarmAppearSocket);
+	close(alarmSocket);
+
+}
+
+int socketAlarmInitialization(int alarmSocket)
+{
+	struct sockaddr_in6 serverAddr;
+	socklen_t addr_size;
+
+	alarmSocket = socket(AF_INET6, SOCK_STREAM, 0);
+	if (alarmSocket == -1)
+	{
+		perror("opening stream socket");
+		exit(1);
+	}
+	memset(&serverAddr, 0, sizeof(serverAddr));				
+	serverAddr.sin6_family = AF_INET6;					
+	serverAddr.sin6_port = htons(PORT_ALARM);
+	serverAddr.sin6_scope_id = LOCAL_INTERFACE_INDEX;
+	inet_pton(AF_INET6,IPV6_SYSTEM, &serverAddr.sin6_addr);
+
+	if (bind(alarmSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) == -1)
+	{
+		perror("binding stream socket");
+		exit(1);
+	}
+
+	if(listen(alarmSocket,5)==0)
+		;
+	else
+		printf("Error: listen function\n");
+
+	return alarmSocket;
+}
+
+int newAlarm(int alarmAppearSocket, int alarmSocket)
+{
+	alarmAppearSocket = accept(alarmSocket, NULL, NULL);
+	if (alarmAppearSocket == -1)
+	{
+		perror("accept");
+		exit(1);
+	}
+	
+	return alarmAppearSocket;
+}
+
+void waitForXML(int alarmAppearSocket, char* buffer)
+{
+	std::string xmlFile;
+	if (recv(alarmAppearSocket, buffer, 1024, 0) == -1)
+	{
+		perror("Receiving problem");
+		exit(1);
+	}
+	xmlFile = buffer;
+	std::cout << "Pakiet xml: " << xmlFile << std::endl;
+	std::ofstream o("data.xml");
+	o << xmlFile << std::endl;
+	o.close();
+}
+
+int chooseAgent()
+{
+	int agent;
+	do {	
+
+		std::cout << std::endl;
+		std::cout << "Wybierza agenta - 1,2 lub 2" << std::endl;
+		std::cin >> agent;
+	}while(agent != 1 and agent != 2 and agent != 3);
+
+	return agent;	
+
+}
+
 
