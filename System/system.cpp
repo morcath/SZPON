@@ -13,7 +13,7 @@
 #define CLOSE_CONNECTION_WITH_AGENT 3
 
 /*Tymczasowo*/
-#define IPV6_AGENT "fe80::a00:27ff:fee9:fd39"//olka:"fe80::eea3:3ace:f5bd:af93"  
+#define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93"//jarcin:"fe80::a00:27ff:fee9:fd39"  
 #define PORT_AGENT 7777
 #define LOCAL_INTERFACE_INDEX 2
 

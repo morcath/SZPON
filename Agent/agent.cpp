@@ -10,7 +10,7 @@
 #include <thread>
 
 /*Tymczasowo*/
-#define IPV6_AGENT "fe80::a00:27ff:fee9:fd39"//olka:"fe80::eea3:3ace:f5bd:af93" 
+#define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93"//jarcin:"fe80::a00:27ff:fee9:fd39" 
 #define PORT_AGENT 7777
 #define LOCAL_INTERFACE_INDEX 2
 
@@ -27,12 +27,12 @@ int main(){
 	char buffer[1024];
 	std::string msg;
 	//reset wartosci w pliku przy uruchomieniu systemu
-	std::ofstream o("/home/marcin/git/SZPON/Agent/src/in");
+	std::ofstream o("src/in");
 	o << "0" << std::endl;
 	o.close();
-	std::ofstream o("/home/marcin/git/SZPON/Agent/src/out");
-	o << "0" << std::endl;
-	o.close();
+	std::ofstream p("src/out");
+	p << "0" << std::endl;
+	p.close();
 	std::thread reader (scanDocument);
 	
 	mainSocket = agentInitialization(mainSocket, buffer);
@@ -98,7 +98,7 @@ std::string receiveInformation(int newSocket, char* buffer)
 		exit(1);
 	}
 	answer = buffer;
-	std::ofstream o("/home/marcin/git/SZPON/Agent/src/in");
+	std::ofstream o("src/in");
 	std::cout << answer << std::endl;
 	o << answer << std::endl;
 	o.close();
@@ -141,7 +141,7 @@ void scanDocument()
 	std::cout<<"Jestem sobie nowym watkiem, nananananana";
 	do{
 		std::ifstream fileToRead;
-		fileToRead.open("/home/marcin/git/SZPON/Agent/src/out");
+		fileToRead.open("src/out");
 		char output;
 		if (fileToRead.is_open())
 		{
