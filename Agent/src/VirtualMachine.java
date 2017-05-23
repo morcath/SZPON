@@ -27,6 +27,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.awt.Font;
 
 public class VirtualMachine {
@@ -41,13 +42,15 @@ public class VirtualMachine {
 	
 	int temperature; //zmienna trzymajaca chwilowa temperature
 	int tempRand; //losowa zmienna odpowiadajaca za wysokosc temperatry w nastepnej iteracji
+	int lT, hT; //zmienne trzymajace poziomy temperatury
 	Random generator = new Random();
 	boolean overheat = false; //zmienna symulujaca nadmierne grzanie systemu - system bedzie sie ogrzewac az do wprowadzenia progu
 	boolean extremeOverheat = false; //zmienna symulujaca ekstremalne grzanie systemu - system bedzie sie ogrzewac mimo chlodzenia
 	boolean coolingSig = false; //otrzymano sygnal nakazujacy chlodzenie
 	boolean heatingSig = false; //otrzymano sygnal nakazujacy grzanie
 	boolean init = true; //zmienna sygnalizujaca inicjalizacje (pierwsza iteracje) pomiaru, do resetu danych
-	boolean alarmState = false; //czy jestesmy w stanie alarmu
+	boolean hotAlarmState = false; //czy jestesmy w stanie alarmu bo za cieplo
+	boolean coldAlarmState = false; //czy jestesmy w stanie alarmu bo za zimno
 	boolean heating = false; // czy dostalismy polecenie grzania
 	boolean cooling = false; //czy dostalismy polecenie chlodzenia
 	public boolean onLine = true; //czy system jest uruchominy
@@ -72,7 +75,7 @@ public class VirtualMachine {
 		
 		panel.setLayout(null);
 		
-		exitB = new JButton ("Wyj�cie");
+		exitB = new JButton ("EXIT");
 		exitB.setBounds(595, 300, 175, 40);
 		exitB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
@@ -85,10 +88,18 @@ public class VirtualMachine {
 		
 		overheatB = new JButton("Przegrzanie");
 		overheatB.setBounds(595, 146, 175, 40);
+		overheatB.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0) {
+				overheat = true;
+		}});
 		panel.add(overheatB);
 		
 		extremeOverheatB = new JButton ("Awaryjne przegrzanie");
 		extremeOverheatB.setBounds(595, 199, 175, 40);
+		extremeOverheatB.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0) {
+				extremeOverheat = true;
+		}});
 		panel.add(extremeOverheatB);
 		
 		textLabel1 = new JLabel ("Aktualna temperatura: ");
@@ -110,8 +121,6 @@ public class VirtualMachine {
 		alertLabel.setForeground(Color.RED);
 		panel.add(alertLabel);
 		
-		//TODO: doda� guziki, ogarn�� wykresy itp, chcemy: Label z aktualnym pomiarem, 
-		//wykres liniowy (mo�e?), wykres s�upkowy
 		mainFrame.getContentPane().add(panel);
 		mainFrame.setVisible(true);
 	}
@@ -125,54 +134,58 @@ public class VirtualMachine {
 			init = false;
 			working = true;
 			fileReady = false;
+			lT = minTemperature;
+			hT = maxTemperature;
 		}
 	//warunki na zmiany temperatur
-		if (heating)
-			++ temperature;
-		else if (cooling && !extremeOverheat)
-			-- temperature;
-		else if (overheat || extremeOverheat)
+		if (extremeOverheat) //czy jest symulowane grzanie mimo wszystko
 			++temperature;
-		else
+		else if (heating) //jak nie to czy jest wlaczone chlodzenie lub grzanie przez serwer
+			++ temperature;
+		else if (cooling)
+			-- temperature;
+		else if (overheat) //jak nie to czy jest symulowane zwykle grzanie
+			++temperature;
+		else //jak nie to symulujemy normalnie zmiane
 		{
 			tempRand = generator.nextInt(100);
 			if (tempRand > 60)
 				++temperature;
 			else if (tempRand < 40)
 				--temperature;
-			else; /*if (tempRand > 45 && tempRand < 55)*/
-			/*else
-			{
-				if (1==1)//funkcja uzale�niaj�ca wynik losowania od akt temp
-					++temperature;
-				else
-					--temperature;
-			}*/
+			else;
 				
 		}
 	//wklepanie nowej temperatury do listy	
 		temperaturesList.add(temperature);
 	//potencjalne wywolanie alarmu	
-		if (temperature >= maxTemperature)
+		if (temperature >= maxTemperature+1)
 		{
-			alarmState = true;
-			sigSend (1);//rzu� alarm �e za gor�co
+			hotAlarmState = true;
+			sigSend (1);//rzuc alarm ze za goraco
 		}
-		else if (temperature <= minTemperature)
+		else if (temperature <= minTemperature-1)
 		{
-			alarmState = true;
-			sigSend (2);//rzu� alarm �e za zimno
+			coldAlarmState = true;
+			sigSend (2);//rzuc alarm ze za zimno
 		}
-		else if (alarmState && (temperature < maxTemperature - 3 || temperature > minTemperature + 3))//TODO spierdolony warunek
+		else if (hotAlarmState && temperature < maxTemperature -3)
 		{
-			heating = cooling = alarmState = false;
+			cooling = false;
 			alertLabel.setText("");
-			alarmState = false;
+			hotAlarmState = false;
+			sigSend(3);
+		}
+		else if (coldAlarmState && temperature > minTemperature + 3)
+		{
+			heating = false;
+			alertLabel.setText("");
+			coldAlarmState = false;
 			sigSend (3);
 		}
 		
-	//WY�WIETLANIE
-		if (alarmState)
+	//WYSWIETLANIE
+		if (hotAlarmState || coldAlarmState)
 			temperatureLabel.setForeground(Color.RED);
 		else
 			temperatureLabel.setForeground(Color.BLACK);
@@ -190,19 +203,37 @@ public class VirtualMachine {
 		{
 			System.out.println("PRZEGRZANIE SYSTEMU!!");
 			alertLabel.setText("PRZEGRZANIE SYSTEMU!");
-		//TODO Wyslanie sygnalu ze za goraco!	
+			try{
+			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/src/out", "UTF-8");
+			    writer.println("1");
+			    writer.close();
+			} catch (IOException e) {
+			   e.printStackTrace();
+			}
 			break;
 		}
 		case 2: //za niska temperatura
 		{
-			System.out.println("PRZECH�ODZENIE SYSTEMU!!");
-			alertLabel.setText("PRZECH�ODZENIE SYSTEMU!");
-		//TODO Wyslanie sygnalu ze za zimno!
+			System.out.println("PRZECHLODZENIE SYSTEMU!!");
+			alertLabel.setText("PRZECHLODZENIE SYSTEMU!");
+			try{
+			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/src/out", "UTF-8");
+			    writer.println("2");
+			    writer.close();
+			} catch (IOException e) {
+			   e.printStackTrace();
+			}
 			break;
 		}
 		case 3: //ustabilizowana temperatura
 		{
-			//TODO Wyslanie sygnalu o ustabilizowanej temperaturze
+			try{
+			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/src/out", "UTF-8");
+			    writer.println("3");
+			    writer.close();
+			} catch (IOException e) {
+			   e.printStackTrace();
+			}
 			break;
 		}
 		}
@@ -216,27 +247,32 @@ public class VirtualMachine {
 		case 1: //otrzymano rozkaz chlodzenia
 		{
 			if (!working)
-				System.out.println("Wywolano chlodzenie nie wywolujac pomiaru. Moze to swiadczyc o uszkodzeniu serwera lub szyny z poleceniami");
+				System.out.println("Wywolano chlodzenie nie wywolujac pomiaru. Moze to swiadczyc o uszkodzeniu serwera lub pliku z poleceniami");
 			else
+			{
 				cooling = true;
+				simulate (lT,hT);
+			}
 			break;
 		}
 		case 2: //otrzymano rozkaz grzania
 		{
 			if (!working)
-				System.out.println("Wywolano grzanie nie wywolujac pomiaru. Moze to swiadczyc o uszkodzeniu serwera lub szyny z poleceniami");
+				System.out.println("Wywolano grzanie nie wywolujac pomiaru. Moze to swiadczyc o uszkodzeniu serwera lub pliku z poleceniami");
 			else
+			{
 				heating = true;
+				simulate (lT,hT);
+			}
 			break;
 		}
-		case 3: //otrzymano sygna� rozpocz�cia pomiar�w
+		case 3: //otrzymano sygnal rozpocz�cia pomiar�w
 		{
 				System.out.println("NIE PODANO PARAMETROW POMIARU!!!");
 				alertLabel.setText("NIE PODANO PARAMETROW POMIARU!!!");
-				//TODO: czy cos tu jeszcze???
 			break;
 		}
-		case 4: //otrzymano sygna� zako�czenia pomiar�w
+		case 4: //otrzymano sygnal zakonczenia pomiarow
 		{
 			working = false;
 			init = true;
@@ -294,6 +330,13 @@ public class VirtualMachine {
 				//koniec generowania
 				System.out.println("Wygenerowano plik xml");
 				fileReady = true;
+				try{
+				    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/src/out", "UTF-8");
+				    writer.println("4");
+				    writer.close();
+				} catch (IOException e) {
+				   e.printStackTrace();
+				}
 			}
 			break;
 		}
