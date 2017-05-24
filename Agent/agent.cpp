@@ -9,6 +9,8 @@
 #include <fstream>
 #include <thread>
 #include <sstream>
+#include <atomic>
+#include <exception>
 
 /*STATIC IPv6 ADDRESS*/
 #define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93"//jarcin:"fe80::a00:27ff:fee9:fd39" 
@@ -29,22 +31,42 @@ void scanDocument();
 int setAlarmSocket();
 void sendFile(int, char*);
 
+std::atomic<bool> connectedWithSystem (false);
+
+
 int main(){
 	int mainSocket, newSocket;
 	char buffer[1024];
 	std::string msg;
-	resetParameters();
+	int x = 0;
 	
-	mainSocket = agentInitialization(mainSocket, buffer);
-	newSocket = newConnection(newSocket, mainSocket);
-
-	std::thread reader (scanDocument);
+	mainSocket = agentInitialization(mainSocket, buffer);	
+	while(1)
+	{
+		std::cout << "GOGOGOG!!!\n";
+		resetParameters();
 	
-	do {
-		msg = receiveInformation(newSocket, buffer);
-	} while (msg != "quit");
+		newSocket = newConnection(newSocket, mainSocket);
 
-	closeConnection(newSocket);
+		std::thread reader (scanDocument);
+	
+		do {
+			msg = receiveInformation(newSocket, buffer);
+			sleep(1);
+			if(msg != "quit")
+				connectedWithSystem = true;
+			std::cout << "siano!\n";
+		} while (msg != "quit");
+
+		std::cout << "FINISH!\n";
+
+		connectedWithSystem = false;
+
+		reader.join();
+		closeConnection(newSocket);
+
+		std::cout << "FINISH!\n";
+	}
 	closeAgent(mainSocket);
 }
 
@@ -173,6 +195,7 @@ void scanDocument()
 			{
 				i = 1;
 				sendInstructions(alarmSocket, buffer, "xml\n");
+				std::cout << "NO ELO\n";
 				sleep(1);
 				sendFile(alarmSocket, buffer);
 			}
@@ -181,7 +204,8 @@ void scanDocument()
 		sleep (1);
 		std::cout<<"Zyje!";
 		//std::this_thread::sleep_for (std::chrono::seconds(1));
-	}while(1);
+	}while(!i);
+
 }
 
 int setAlarmSocket()
@@ -202,7 +226,10 @@ int setAlarmSocket()
 	agentAddr.sin6_family = AF_INET6;					   
 	agentAddr.sin6_port = htons(PORT_ALARM);
 	agentAddr.sin6_scope_id = LOCAL_INTERFACE_INDEX;
-	inet_pton(AF_INET6,IPV6_SYSTEM, &agentAddr.sin6_addr);	
+	inet_pton(AF_INET6,IPV6_SYSTEM, &agentAddr.sin6_addr);
+
+	while(!connectedWithSystem)
+		;	
   
 	if(connect(alarmSocket, (struct sockaddr *) &agentAddr, sizeof agentAddr) == -1)
 	{

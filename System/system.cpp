@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include <thread>
+#include <atomic>
 
 #define END_WORK 0
 #define CONNECT_WITH_AGENT 1
@@ -35,13 +36,19 @@ int newAlarm(int, int);
 void waitForXML(int, char*);
 int chooseAgent();
 
+std::atomic<int> numberOfAgentConnected (0);
+std::atomic<bool> systemIsRunning (true);
+
 int main(void)
 {
 	int systemSocket;
 	char buffer[1024];
 	int activity;	
 	int agentNo;
+	bool agentConnected = false;
+	std::string request;
 	std::thread reader (waitForAlarm);
+	
 	welcomeScreen();
 	
 	do {
@@ -49,19 +56,50 @@ int main(void)
 		
 		if(activity == CONNECT_WITH_AGENT)
 		{
-			agentNo = chooseAgent();
-			systemSocket = connectToAgent(agentNo);
+			if (agentConnected)
+				std::cout << "You are connected with Agent" << std::endl;
+			else
+			{
+				agentNo = chooseAgent();
+				systemSocket = connectToAgent(agentNo);
+				agentConnected = true;
+			}
 		}
 		
 		else if(activity == SEND_REQUEST_TO_AGENT)
-			sendInformation(systemSocket, buffer);
+		{
+			if(agentConnected)
+				sendInformation(systemSocket, buffer);
+			else
+				std::cout << "Firstly connect with Agent" << std::endl;
+		}
+
+		else if(activity == CLOSE_CONNECTION_WITH_AGENT)
+		{
+			if(agentConnected)
+			{
+				request = "quit";
+				strcpy(buffer, request.c_str());
+				send(systemSocket,buffer,request.size()+1,0);
+				closeConnectionWithAgent(systemSocket);
+				agentConnected = false;
+			}
+			else
+				std::cout << "You are not connected wit Agent" << std::endl;
+		}
 		
 		else
 			activity = END_WORK;
 
 	} while(activity != END_WORK);
 
-	closeConnectionWithAgent(systemSocket);
+	if(agentConnected)
+	{
+		closeConnectionWithAgent(systemSocket);
+	}
+	
+	systemIsRunning = false;
+	sleep(1);
 	std::cout << "BYE!" << std::endl;
 	return 0;
 }
@@ -83,6 +121,7 @@ int menu()
 	std::cout << "0 - Exit" << std::endl;
 	std::cout << "1 - Connect with Agent" << std::endl;
 	std::cout << "2 - Send request to Agent" << std::endl;
+	std::cout << "3 - Disconnect with Agent" << std::endl;
 	std::cout << std::endl;
 	std::cout << "Activity: ";
 	std::cin >> activity;
@@ -161,6 +200,7 @@ int sendInformation(int systemSocket, char* buffer)
 		request += min;
 		request += " ";
 		request += max;
+		numberOfAgentConnected += 1;
 	}
 	else if (request == "2")
 	{
@@ -201,26 +241,49 @@ void waitForAlarm()
 	int errorRate = 0;
 	std::string msg;
 
-	alarmSocket = socketAlarmInitialization(alarmSocket);
-	alarmAppearSocket = newAlarm(alarmAppearSocket, alarmSocket);
+	while (systemIsRunning)
+	{
+		if(numberOfAgentConnected > 0)
+		{
+			std::cout << "1\n";
+			alarmSocket = socketAlarmInitialization(alarmSocket);
+			std::cout << "2\n";
+			alarmAppearSocket = newAlarm(alarmAppearSocket, alarmSocket);
+			std::cout << "3\n";
 	
-	do {
-		msg = receiveInformation(alarmAppearSocket, buffer);
-		if(msg == "up\n")
-			errorRate += 1;
-		else if(msg == "down\n")
-			errorRate += 1;
-		else if(msg == "ok\n")
-			errorRate = 0;
-		else if(msg == "xml\n")
-			waitForXML(alarmAppearSocket, buffer);
-		if(errorRate > 10)
-			std::cout << "SHUTDOWN" << std::endl;
+			do {
+				msg = receiveInformation(alarmAppearSocket, buffer);
+				std::cout << "msg\n";
+				if(msg == "up\n")
+				{
+					errorRate += 1;
+				}
+				else if(msg == "down\n")
+				{
+					errorRate += 1;
+				}
+				else if(msg == "ok\n")
+					errorRate = 0;
+				else if(msg == "xml\n")
+				{
+					waitForXML(alarmAppearSocket, buffer);
+					numberOfAgentConnected -= 1;
+
+				}
+				if(errorRate > 10)
+				{
+					std::cout << "SHUTDOWN" << std::endl;
+					numberOfAgentConnected = 0;
+				}	
+			} while(numberOfAgentConnected > 0);
+
+			std::cout << "No Agents left\n";
 	
-	} while(1);
-	
-	close(alarmAppearSocket);
-	close(alarmSocket);
+			close(alarmAppearSocket);
+			close(alarmSocket);
+		}
+	}
+	exit(0);
 
 }
 
@@ -288,12 +351,11 @@ int chooseAgent()
 	do {	
 
 		std::cout << std::endl;
-		std::cout << "Wybierza agenta - 1,2 lub 2" << std::endl;
+		std::cout << "Wybierza agenta - 1,2 lub 3" << std::endl;
 		std::cin >> agent;
 	}while(agent != 1 and agent != 2 and agent != 3);
 
 	return agent;	
 
 }
-
 
