@@ -9,14 +9,7 @@ function szpon_proto.dissector(buffer, pinfo, tree)
         if f_space_index then
             return string.sub(line, 1, f_space_index - 1), string.sub(line, f_space_index + 1)
         end
-        return line, nil --ostatnie slowo i 0
-    end
- 
-    local function add_sub_arg(line, offset, name) --
-        arg, line = get_next_arg(line)
-        subtree:add(buffer(offset + 1, arg:len()), name..arg)
-        offset = offset + 1 + arg:len()
-        return line, offset
+        return line, nil --ostatnie slowo, 0
     end
  
     local get_next_line = buffer():string():gmatch('[^\n]+')-- wszystkie znaki do i bez \n
@@ -36,7 +29,7 @@ function szpon_proto.dissector(buffer, pinfo, tree)
         end
  
         if arg == 'Received!' then
-            subtree:add(buffer(offset, arg:len()), "Received information to Agent")       
+            subtree:add(buffer(offset, arg:len()), "Received!")       
        
         elseif arg == 'up' then
             subtree:add(buffer(offset, arg:len()), "Command: 'up'")
@@ -49,6 +42,9 @@ function szpon_proto.dissector(buffer, pinfo, tree)
 
         elseif arg == 'xml' then
             subtree:add(buffer(offset, arg:len()), "Command: 'xml'")
+
+        elseif arg == 'quit' then
+            subtree:add(buffer(offset, arg:len()), "quit")
        
         else
             return
