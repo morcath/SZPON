@@ -58,5 +58,6 @@ end
 
 -- load the tcp.port table
 tcp_table = DissectorTable.get("tcp.port")
- -- register our protocol to handle tcp port 7777
+ -- register our protocol to handle tcp port 7777 and 8888
 tcp_table:add(7777, szpon_proto)
+tcp_table:add(8888, szpon_proto)
