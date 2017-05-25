@@ -35,7 +35,10 @@ public class VirtualMachine {
 	JPanel panel = new JPanel();
 	JButton exitB;
 	JButton overheatB;
+	JButton overcoolB;
+	JButton extremeOvercoolB;
 	JButton extremeOverheatB;
+	JButton cancelAnomalyB;
 	JLabel textLabel1;
 	JLabel temperatureLabel;
 	JLabel alertLabel;
@@ -46,6 +49,8 @@ public class VirtualMachine {
 	Random generator = new Random();
 	boolean overheat = false; //zmienna symulujaca nadmierne grzanie systemu - system bedzie sie ogrzewac az do wprowadzenia progu
 	boolean extremeOverheat = false; //zmienna symulujaca ekstremalne grzanie systemu - system bedzie sie ogrzewac mimo chlodzenia
+	boolean overcool = false; //zmienna symulujaca nadmierne chlodzenia systemu - system bedzie sie chlodzic az do wprowadzenia progu
+	boolean extremeOvercool = false; //zmienna symulujaca ekstremalne chlodzenie systemu - system bedzie sie chlodzic mimo chlodzenia
 	boolean coolingSig = false; //otrzymano sygnal nakazujacy chlodzenie
 	boolean heatingSig = false; //otrzymano sygnal nakazujacy grzanie
 	boolean init = true; //zmienna sygnalizujaca inicjalizacje (pierwsza iteracje) pomiaru, do resetu danych
@@ -76,7 +81,7 @@ public class VirtualMachine {
 		panel.setLayout(null);
 		
 		exitB = new JButton ("EXIT");
-		exitB.setBounds(595, 300, 175, 40);
+		exitB.setBounds(556, 300, 214, 40);
 		exitB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
 				mainFrame.dispose();
@@ -86,21 +91,48 @@ public class VirtualMachine {
 		}});
 		panel.add(exitB);
 		
-		overheatB = new JButton("Przegrzanie");
-		overheatB.setBounds(595, 146, 175, 40);
+		overheatB = new JButton("OVERHEATING");
+		overheatB.setBounds(327, 199, 214, 40);
 		overheatB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
 				overheat = true;
 		}});
 		panel.add(overheatB);
 		
-		extremeOverheatB = new JButton ("Awaryjne przegrzanie");
-		extremeOverheatB.setBounds(595, 199, 175, 40);
+		extremeOverheatB = new JButton ("EXTREME OVERHEATING");
+		extremeOverheatB.setBounds(556, 199, 214, 40);
 		extremeOverheatB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
 				extremeOverheat = true;
 		}});
 		panel.add(extremeOverheatB);
+		
+		overcoolB = new JButton("OVERCOOLING");
+		overcoolB.setBounds(327, 146, 214, 40);
+		overcoolB.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0) {
+				overcool = true;
+		}});
+		panel.add(overcoolB);
+		
+		extremeOvercoolB = new JButton("EXTREME OVERCOOLING");
+		extremeOvercoolB.setBounds(556, 146, 214, 40);
+		extremeOvercoolB.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0) {
+				extremeOvercool = true;
+		}});
+		panel.add(extremeOvercoolB);
+		
+		cancelAnomalyB = new JButton("CANCEL ALL [EXTREME]OVERHEATING/COOLING SIMULATIONS");
+		cancelAnomalyB.setBounds(327, 247, 443, 40);
+		cancelAnomalyB.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0) {
+				extremeOvercool = false;
+				extremeOverheat = false;
+				overcool = false;
+				overheat = false;
+		}});
+		panel.add(cancelAnomalyB);
 		
 		textLabel1 = new JLabel ("Aktualna temperatura: ");
 		textLabel1.setBounds(595, 13, 175, 31);
@@ -140,12 +172,16 @@ public class VirtualMachine {
 	//warunki na zmiany temperatur
 		if (extremeOverheat) //czy jest symulowane grzanie mimo wszystko
 			++temperature;
+		else if (extremeOvercool) //czy jest symulowane grzanie mimo wszystko
+			--temperature;
 		else if (heating) //jak nie to czy jest wlaczone chlodzenie lub grzanie przez serwer
 			++ temperature;
 		else if (cooling)
 			-- temperature;
 		else if (overheat) //jak nie to czy jest symulowane zwykle grzanie
 			++temperature;
+		else if (overcool) //jak nie to czy jest symulowane zwykle chlodzenie
+			--temperature;
 		else //jak nie to symulujemy normalnie zmiane
 		{
 			tempRand = generator.nextInt(100);
@@ -228,6 +264,7 @@ public class VirtualMachine {
 		case 3: //ustabilizowana temperatura
 		{
 			try{
+				overheat = overcool = extremeOverheat = extremeOvercool = false;
 			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/out", "UTF-8");
 			    writer.println("3");
 			    writer.close();
