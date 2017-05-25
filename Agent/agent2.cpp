@@ -52,6 +52,7 @@ int main()
 		//resetParameters("all");
 		newSocket = newConnection(newSocket, mainSocket);
 		connectedWithSystem = true;
+		std::cout << "Connected!\n";
 
 		do {
 			msg = receiveInstructions(newSocket, buffer);
@@ -59,7 +60,7 @@ int main()
 			if(msg == "end")
 				runAgent = false;
 
-		} while (msg != "quit");
+		} while (msg != "quit\n");
 
 		
 		closeSocketSafe(newSocket);
@@ -136,7 +137,7 @@ std::string receiveInstructions(int socket, char* buffer)
 
 	instructions = receiveMsg(socket, buffer);
 
-	if(instructions == "quit" or instructions == "end")
+	if(instructions == "quit\n" or instructions == "end")
 		return instructions;
 
 	std::ofstream o("src/in");
@@ -235,7 +236,7 @@ void sendToSystem()
 				sendInstructions(sendSocket, buffer, "xml1\n");
 				sleep(1);
 				sendFile(sendSocket, buffer);
-				resetParameters("out");
+				resetParameters("all");
 				closeSocketSafe(sendSocket);
 			}
 		}

@@ -273,7 +273,7 @@ std::string menuToInstructions()
 int sendToAgentCloseConnection(int socket, char* buffer)
 {
 	std::string request;
-	request = "quit";
+	request = "quit\n";
 	strcpy(buffer, request.c_str());
 	sendMsg(socket, buffer);
 	return 0;
