@@ -165,7 +165,7 @@ int sendMsg(int socket, char* buffer)
 		perror("send message");
 		exit(1);
 	}
-
+	
 	std::cout << "WAŻNE!!!!    " << msgSize << "=?=" << sendSize << std::endl;
 	if(sendSize != msgSize)
 		exit(0);
@@ -241,7 +241,7 @@ void sendToSystem()
 		}
 
 		fileToRead.close();
-		sleep (1);
+		sleep(1);
 	}while(runAgent);	
 
 

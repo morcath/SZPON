@@ -302,9 +302,9 @@ int responseFromAgents()
 	{
 		if(numberOfConnectedAgents)
 		{
-			responseSocket = waitForAgent(responseSocket, mainSocket);
 
 			do {
+				responseSocket = waitForAgent(responseSocket, mainSocket);
 				msg = receiveMsg(responseSocket, buffer);
 
 				std::cout << msg << std::endl;
@@ -312,7 +312,7 @@ int responseFromAgents()
 				if(msg == "up\n")
 				{
 					errorRate += 1;
-					//@TODO chłodzenie
+					//@TODO chłodzenie		
 				}
 				else if(msg == "down\n")
 				{
@@ -322,14 +322,17 @@ int responseFromAgents()
 				else if(msg == "ok\n")
 				{
 					errorRate = 0;
+					closeSocketSafe(responseSocket);
 					break;
 				}
 	
 				else if(msg[0] == 'x')
 				{
 					receiveXML(responseSocket, buffer, msg);
+					closeSocketSafe(responseSocket);
 					break;
 				}
+				closeSocketSafe(responseSocket);
 
 				if(errorRate > 10)
 				{
@@ -338,7 +341,6 @@ int responseFromAgents()
 				}	
 			} while(numberOfConnectedAgents > 0);
 
-			closeSocketSafe(responseSocket);		
 		}
 	}
 
