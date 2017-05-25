@@ -29,7 +29,13 @@ function szpon_proto.dissector(buffer, pinfo, tree)
         end
  
         if arg == 'Received!' then
-            subtree:add(buffer(offset, arg:len()), "Received!")       
+            subtree:add(buffer(offset, arg:len()), "Received!") 
+
+        elseif arg == 'Startstat' then
+            subtree:add(buffer(offset, arg:len()), "Start stat") 
+
+        elseif arg == 'Endstat' then
+            subtree:add(buffer(offset, arg:len()), "End stat")       
        
         elseif arg == 'up' then
             subtree:add(buffer(offset, arg:len()), "Command: 'up'")
@@ -42,6 +48,9 @@ function szpon_proto.dissector(buffer, pinfo, tree)
 
         elseif arg == 'xml' then
             subtree:add(buffer(offset, arg:len()), "Command: 'xml'")
+
+        elseif arg == 'xml1' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'xml1'")
 
         elseif arg == 'quit' then
             subtree:add(buffer(offset, arg:len()), "quit")
