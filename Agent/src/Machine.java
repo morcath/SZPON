@@ -28,7 +28,7 @@ public class Machine {
 			
 			try
 			{
-				Scanner scanner = new Scanner(new File (System.getProperty("user.dir")+"/in"));
+				Scanner scanner = new Scanner(new File (System.getProperty("user.dir")+"/src/in"));//"/in"));
 				while(scanner.hasNextLine())
 				{
 					paramsString = scanner.nextLine();
