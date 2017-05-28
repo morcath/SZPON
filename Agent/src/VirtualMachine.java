@@ -29,6 +29,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.awt.Font;
+import javax.swing.border.LineBorder;
 
 public class VirtualMachine {
 	JFrame mainFrame;
@@ -42,10 +43,15 @@ public class VirtualMachine {
 	JLabel textLabel1;
 	JLabel temperatureLabel;
 	JLabel alertLabel;
+	JLabel rectangleLabel;
+	JLabel minPossibleScale, minScale, avgScale, maxScale, maxPossibleScale;
+	Rectangle rectangle;
 	
 	int temperature; //zmienna trzymajaca chwilowa temperature
 	int tempRand; //losowa zmienna odpowiadajaca za wysokosc temperatry w nastepnej iteracji
 	int lT, hT; //zmienne trzymajace poziomy temperatury
+	int minRectangleTemp, maxRectangleTemp;
+	double rectangleDegree;
 	Random generator = new Random();
 	boolean overheat = false; //zmienna symulujaca nadmierne grzanie systemu - system bedzie sie ogrzewac az do wprowadzenia progu
 	boolean extremeOverheat = false; //zmienna symulujaca ekstremalne grzanie systemu - system bedzie sie ogrzewac mimo chlodzenia
@@ -67,6 +73,12 @@ public class VirtualMachine {
 	ArrayList<Integer> temperaturesList = new ArrayList<Integer>();
 	VirtualMachine()
 	{
+		Line maxPossibleLine = new Line();
+		Line maxLine = new Line();
+		Line avgLine = new Line();
+		Line minLine = new Line();
+		Line minPossibleLine = new Line();
+		
 		mainFrame = new JFrame();
 		mainFrame.setDefaultCloseOperation (JFrame.EXIT_ON_CLOSE);
 		mainFrame.setTitle("Maszyna robocza");
@@ -75,13 +87,13 @@ public class VirtualMachine {
 		screenWidth = (int)screenSize.getWidth();
 		screenHeight = (int)screenSize.getHeight();
 		
-		mainFrame.setBounds((screenWidth/2)-400, (screenHeight/2)-200, 800, 400);
+		mainFrame.setBounds((screenWidth/2)-330, (screenHeight/2)-200, 660, 400);
 		panel = new JPanel();
 		
 		panel.setLayout(null);
 		
 		exitB = new JButton ("EXIT");
-		exitB.setBounds(556, 300, 214, 40);
+		exitB.setBounds(272, 305, 214, 40);
 		exitB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
 				mainFrame.dispose();
@@ -92,39 +104,47 @@ public class VirtualMachine {
 		panel.add(exitB);
 		
 		overheatB = new JButton("OVERHEATING");
-		overheatB.setBounds(327, 199, 214, 40);
+		overheatB.setForeground(new Color (100,0,0));
+		overheatB.setBounds(140, 146, 236, 40);
 		overheatB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
 				overheat = true;
+				extremeOverheat = overcool = extremeOvercool = false;
 		}});
 		panel.add(overheatB);
 		
 		extremeOverheatB = new JButton ("EXTREME OVERHEATING");
-		extremeOverheatB.setBounds(556, 199, 214, 40);
+		extremeOverheatB.setForeground(new Color (100,0,0));
+		extremeOverheatB.setBounds(382, 146, 236, 40);
 		extremeOverheatB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
 				extremeOverheat = true;
+				overheat = overcool = extremeOvercool = false;
 		}});
 		panel.add(extremeOverheatB);
 		
 		overcoolB = new JButton("OVERCOOLING");
-		overcoolB.setBounds(327, 146, 214, 40);
+		overcoolB.setForeground(new Color (0,0,100));
+		overcoolB.setBounds(140, 199, 236, 40);
 		overcoolB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
 				overcool = true;
+				overheat = extremeOverheat = extremeOvercool = false;
 		}});
 		panel.add(overcoolB);
 		
 		extremeOvercoolB = new JButton("EXTREME OVERCOOLING");
-		extremeOvercoolB.setBounds(556, 146, 214, 40);
+		extremeOvercoolB.setForeground(new Color (0,0,100));
+		extremeOvercoolB.setBounds(382, 199, 236, 40);
 		extremeOvercoolB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
 				extremeOvercool = true;
+				overheat = extremeOverheat = overcool = false;
 		}});
 		panel.add(extremeOvercoolB);
 		
 		cancelAnomalyB = new JButton("CANCEL ALL [EXTREME]OVERHEATING/COOLING SIMULATIONS");
-		cancelAnomalyB.setBounds(327, 247, 443, 40);
+		cancelAnomalyB.setBounds(140, 252, 478, 40);
 		cancelAnomalyB.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
 				extremeOvercool = false;
@@ -134,24 +154,86 @@ public class VirtualMachine {
 		}});
 		panel.add(cancelAnomalyB);
 		
-		textLabel1 = new JLabel ("Aktualna temperatura: ");
-		textLabel1.setBounds(595, 13, 175, 31);
+		textLabel1 = new JLabel ("CURRENT TEMPERATURE: ");
+		textLabel1.setHorizontalAlignment(SwingConstants.CENTER);
+		textLabel1.setBounds(140, 13, 478, 31);
 		textLabel1.setFont(new Font("Tahoma", Font.PLAIN, 17));
 		panel.add(textLabel1);
 		
+		rectangleLabel = new JLabel();
+		rectangleLabel.setForeground(Color.WHITE);
+		rectangleLabel.setFont(new Font("Tahoma", Font.BOLD, 15));
+		rectangleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(rectangleLabel);
+		
 		temperatureLabel = new JLabel ("0");
 		temperatureLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		temperatureLabel.setBounds(595, 57, 175, 65);
+		temperatureLabel.setBounds(140, 57, 478, 52);
 		temperatureLabel.setFont(new Font("Tahoma", Font.PLAIN, 50));
 		panel.add(temperatureLabel);
 		
 		alertLabel = new JLabel("");
-		alertLabel.setLocation(595, 118);
-		alertLabel.setSize(175, 21);
+		alertLabel.setLocation(126, 112);
+		alertLabel.setSize(504, 40);
 		alertLabel.setFont(new Font("Tahoma", Font.PLAIN, 15));
 		alertLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		alertLabel.setForeground(Color.RED);
 		panel.add(alertLabel);
+		
+		rectangle = new Rectangle();
+		rectangle.setBorder(new LineBorder(new Color(0, 0, 0), 2));
+		panel.add(rectangle);
+		rectangle.setBackground(new Color(0,200,0));
+		
+		minPossibleScale = new JLabel();
+		minPossibleScale.setForeground(new Color(150,150,150));
+		minPossibleScale.setBounds(110 , 328, 30, 20);
+		panel.add(minPossibleScale);
+		
+		minScale = new JLabel();
+		minScale.setForeground(new Color(150,150,150));
+		minScale.setBounds(110 , 255, 30, 20);
+		panel.add(minScale);
+		
+		avgScale = new JLabel();
+		avgScale.setForeground(new Color(150,150,150));
+		avgScale.setBounds(110 , 180, 30, 20);
+		panel.add(avgScale);
+		
+		maxScale = new JLabel();
+		maxScale.setForeground(new Color(150,150,150));
+		maxScale.setBounds(110 , 105, 30, 20);
+		panel.add(maxScale);
+		
+		maxPossibleScale = new JLabel();
+		maxPossibleScale.setForeground(new Color(150,150,150));
+		maxPossibleScale.setBounds(110 , 30, 30, 20);
+		panel.add(maxPossibleScale);
+		
+		maxPossibleLine.setBorder(new LineBorder(new Color(170, 170, 170), 3));
+		maxPossibleLine.setLocation(14, 40);
+		maxPossibleLine.setSize(95, 2);
+		panel.add(maxPossibleLine);
+		
+		maxLine.setBorder(new LineBorder(new Color(170, 170, 170), 3));
+		maxLine.setLocation(14, 115);
+		maxLine.setSize(95, 2);
+		panel.add(maxLine);
+		
+		avgLine.setBorder(new LineBorder(new Color(170, 170, 170), 3));
+		avgLine.setLocation(14, 190);
+		avgLine.setSize(95, 2);
+		panel.add(avgLine);
+		
+		minLine.setBorder(new LineBorder(new Color(170, 170, 170), 3));
+		minLine.setLocation(14, 265);
+		minLine.setSize(95, 2);
+		panel.add(minLine);
+		
+		minPossibleLine.setBorder(new LineBorder(new Color(150, 150, 150), 3));
+		minPossibleLine.setLocation(14, 338);
+		minPossibleLine.setSize(95, 2);
+		panel.add(minPossibleLine);
 		
 		mainFrame.getContentPane().add(panel);
 		mainFrame.setVisible(true);
@@ -168,6 +250,14 @@ public class VirtualMachine {
 			fileReady = false;
 			lT = minTemperature;
 			hT = maxTemperature;
+			minRectangleTemp = minTemperature - (maxTemperature - minTemperature)/2;
+			maxRectangleTemp = maxTemperature + (maxTemperature-minTemperature)/2;
+			rectangleDegree = ((double)300/(maxRectangleTemp-minRectangleTemp));
+			maxPossibleScale.setText(""+maxRectangleTemp);
+			maxScale.setText(""+maxTemperature);
+			avgScale.setText(""+(maxTemperature+minTemperature)/2);
+			minScale.setText(""+minTemperature);
+			minPossibleScale.setText(""+minRectangleTemp);
 		}
 	//warunki na zmiany temperatur
 		if (extremeOverheat) //czy jest symulowane grzanie mimo wszystko
@@ -221,10 +311,41 @@ public class VirtualMachine {
 		}
 		
 	//WYSWIETLANIE
-		if (hotAlarmState || coldAlarmState)
+		rectangleLabel.setText(""+temperature);
+		
+		if (hotAlarmState || coldAlarmState){
 			temperatureLabel.setForeground(Color.RED);
-		else
+			rectangle.setBackground(new Color(200,0,0));
+		}
+		else {
 			temperatureLabel.setForeground(Color.BLACK);
+			rectangle.setBackground(new Color (0,200,0));
+		}
+		
+		int x = (int) ((temperature - minRectangleTemp)*rectangleDegree);
+		if (temperature > maxRectangleTemp+1) {
+			rectangleLabel.setForeground(Color.WHITE);
+			rectangle.setBounds(14, (int)(40-2*rectangleDegree), 90, (int)(300+2*rectangleDegree));
+			rectangleLabel.setBounds(14, (int)(40-2*rectangleDegree), 90, 20);
+		}
+		else if (temperature <= minRectangleTemp) {
+			rectangleLabel.setForeground(Color.BLACK);
+			rectangle.setBounds(14, 337, 90, 3);
+			minPossibleScale.setText(""+temperature);
+			rectangleLabel.setBounds(14, 320, 90, 20);
+		}
+		else {
+			if (340-x >= 320) {
+				rectangleLabel.setForeground(Color.BLACK);
+				rectangleLabel.setBounds(14, 320, 90, 20);
+			}
+			else {
+				rectangleLabel.setForeground(Color.WHITE);
+				rectangleLabel.setBounds(14, 340-x, 90, 20);
+			}
+			rectangle.setBounds(14, 340-x, 90, x);
+			minPossibleScale.setText(""+minRectangleTemp);
+		}
 		
 		System.out.println("Aktualny pomiar: " + temperature);
 		temperatureLabel.setText(""+temperature);
@@ -237,8 +358,8 @@ public class VirtualMachine {
 		{
 		case 1: //za wysoka temperatura
 		{
-			System.out.println("PRZEGRZANIE SYSTEMU!!");
-			alertLabel.setText("PRZEGRZANIE SYSTEMU!");
+			System.out.println("Przegrzanie systemu!");
+			alertLabel.setText("SYSTEM IS OVERHEATED!");
 			try{
 			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/out", "UTF-8");
 			    writer.println("1");
@@ -250,8 +371,8 @@ public class VirtualMachine {
 		}
 		case 2: //za niska temperatura
 		{
-			System.out.println("PRZECHLODZENIE SYSTEMU!!");
-			alertLabel.setText("PRZECHLODZENIE SYSTEMU!");
+			System.out.println("Przechlodzenie systemu!");
+			alertLabel.setText("SYSTEM IS OVERCOOLED!");
 			try{
 			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/out", "UTF-8");
 			    writer.println("2");
@@ -276,15 +397,16 @@ public class VirtualMachine {
 		}
 	}
 	
-	
 	public void sigRecv(int sigNo)
 	{
 		switch (sigNo)
 		{
 		case 1: //otrzymano rozkaz chlodzenia
 		{
-			if (!working)
+			if (!working){
 				System.out.println("Wywolano chlodzenie nie wywolujac pomiaru. Moze to swiadczyc o uszkodzeniu serwera lub pliku z poleceniami");
+				alertLabel.setText("Cooling detected while no measurement currently active!");
+			}
 			else
 			{
 				cooling = true;
@@ -294,8 +416,10 @@ public class VirtualMachine {
 		}
 		case 2: //otrzymano rozkaz grzania
 		{
-			if (!working)
+			if (!working){
 				System.out.println("Wywolano grzanie nie wywolujac pomiaru. Moze to swiadczyc o uszkodzeniu serwera lub pliku z poleceniami");
+				alertLabel.setText("Heating detected while no measurement currently active!");
+			}
 			else
 			{
 				heating = true;
@@ -306,7 +430,7 @@ public class VirtualMachine {
 		case 3: //otrzymano sygnal rozpocz�cia pomiar�w
 		{
 				System.out.println("NIE PODANO PARAMETROW POMIARU!!!");
-				alertLabel.setText("NIE PODANO PARAMETROW POMIARU!!!");
+				alertLabel.setText("MEASUREMENT PARAMS ARE UNKNOWN!");
 			break;
 		}
 		case 4: //otrzymano sygnal zakonczenia pomiarow
@@ -366,6 +490,7 @@ public class VirtualMachine {
 			     }
 				//koniec generowania
 				System.out.println("Wygenerowano plik xml");
+				alertLabel.setText("XML FILE IS GENERATED");
 				fileReady = true;
 				try{
 				    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/out", "UTF-8");
@@ -390,4 +515,3 @@ public class VirtualMachine {
 	}
 
 }
- 
