@@ -32,10 +32,10 @@ function szpon_proto.dissector(buffer, pinfo, tree)
             subtree:add(buffer(offset, arg:len()), "Received!") 
 
         elseif arg == 'Startstat' then
-            subtree:add(buffer(offset, arg:len()), "Start stat") 
+            subtree:add(buffer(offset, arg:len()), "Rozpoczyna pobieranie statystyk") 
 
         elseif arg == 'Endstat' then
-            subtree:add(buffer(offset, arg:len()), "End stat")       
+            subtree:add(buffer(offset, arg:len()), "Konczy pobieranie statystyk")       
        
         elseif arg == 'up' then
             subtree:add(buffer(offset, arg:len()), "Command: 'up'")
