@@ -10,6 +10,14 @@
 #include <thread>
 #include <atomic>
 
+/**
+ * Serwer nadzorujący działanie agentów kontrolujących maszynę
+ * @author Aleksander Tym
+ * @zespol: Aleksander Tym, Marcin Janeczko, Aleksandra Rybak, Katarzyna Romasevska, Bartlomiej Przewozniak
+ * @data: kwiecien-maj 2017
+ * Program jest czescia projektu SZPON
+ */
+
 #define END_WORK 0
 #define CONNECT_WITH_AGENT 1
 #define SEND_REQUEST_TO_AGENT 2
@@ -88,6 +96,7 @@ int main(void)
 			}
 			else
 				std::cout << "You are not connected wit Agent" << std::endl;
+		
 		}
 		
 
@@ -309,19 +318,26 @@ int responseFromAgents()
 
 				std::cout << msg << std::endl;
 
-				if(msg == "up\n")
+				if(msg == "up\n" && errorRate <= 10)
 				{
 					errorRate += 1;
-					//@TODO chłodzenie		
+					msg = "1";
+					strcpy(buffer, msg.c_str());
+					sendMsg(responseSocket, buffer);		
 				}
-				else if(msg == "down\n")
+				else if(msg == "down\n" && errorRate <= 10)
 				{
 					errorRate += 1;
-					//@TODO grzanie
+					msg = "2";
+					strcpy(buffer, msg.c_str());
+					sendMsg(responseSocket, buffer);
 				}
 				else if(msg == "ok\n")
 				{
 					errorRate = 0;
+					msg = "3";
+					strcpy(buffer, msg.c_str());
+					sendMsg(responseSocket, buffer);
 					closeSocketSafe(responseSocket);
 					break;
 				}
@@ -332,13 +348,18 @@ int responseFromAgents()
 					closeSocketSafe(responseSocket);
 					break;
 				}
-				closeSocketSafe(responseSocket);
-
-				if(errorRate > 10)
+				else if(errorRate > 10)
 				{
 					std::cout << "SHUTDOWN" << std::endl;
-					exit(1);
-				}	
+					msg = "end\n";
+					strcpy(buffer, msg.c_str());
+					sendMsg(responseSocket, buffer);
+					closeSocketSafe(responseSocket);
+					systemIsRunning = false;
+					break;
+				}
+				closeSocketSafe(responseSocket);
+	
 			} while(numberOfConnectedAgents > 0);
 
 		}
