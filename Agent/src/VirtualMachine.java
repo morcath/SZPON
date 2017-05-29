@@ -385,7 +385,7 @@ public class VirtualMachine {
 		case 3: //ustabilizowana temperatura
 		{
 			try{
-				overheat = overcool = extremeOverheat = extremeOvercool = false;
+				cooling = heating = overheat = overcool = extremeOverheat = extremeOvercool = false;
 			    PrintWriter writer = new PrintWriter(System.getProperty("user.dir")+"/out", "UTF-8");
 			    writer.println("3");
 			    writer.close();
@@ -429,8 +429,12 @@ public class VirtualMachine {
 		}
 		case 3: //otrzymano sygnal rozpocz�cia pomiar�w
 		{
+			if (init) {
 				System.out.println("NIE PODANO PARAMETROW POMIARU!!!");
 				alertLabel.setText("MEASUREMENT PARAMS ARE UNKNOWN!");
+			}
+			else
+				simulate (lT, hT);
 			break;
 		}
 		case 4: //otrzymano sygnal zakonczenia pomiarow
