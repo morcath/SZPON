@@ -21,8 +21,8 @@
  */
 
 /*STATIC IPv6 ADDRESS*/
-#define IPV6_AGENT "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"//jarcin:"fe80::a00:27ff:fee9:fd39" 
-#define IPV6_SYSTEM "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"
+#define IPV6_AGENT "fe80::b157:9a1b:586f:a90a"//jarcin:"fe80::a00:27ff:fee9:fd39" 
+#define IPV6_SYSTEM "fe80::b157:9a1b:586f:a90a"
 #define PORT_AGENT 7777
 #define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2
@@ -147,7 +147,7 @@ std::string receiveInstructions(int socket, char* buffer)
 
 	instructions = receiveMsg(socket, buffer);
 
-	std::cout << "XDDDDD: " << instructions << std::endl;
+	std::cout << "\nInstructions: " << instructions << std::endl;
 
 	if(instructions == "quit\n" or instructions == "end")
 		return instructions;
@@ -179,7 +179,7 @@ int sendMsg(int socket, char* buffer)
 		exit(1);
 	}
 	
-	std::cout << "WAŻNE!!!!    " << msgSize << "=?=" << sendSize << std::endl;
+	//std::cout << "WAŻNE!!!!    " << msgSize << "=?=" << sendSize << std::endl;
 	if(sendSize != msgSize)
 		exit(0);
 
@@ -310,7 +310,7 @@ int setSendSocket()
 		return 1; 
 	}
 	else
-		std::cout << "Connected!" << std::endl;
+		std::cout << "up or down" << std::endl;
 
 	return socketIni;
 }
@@ -335,7 +335,7 @@ void sendFile(int socket, char* buffer)
 		xmlFile.append(xmlLine);
 	}
 
-	std::cout << xmlFile << std::endl;
+	std::cout << "xmlFile" << std::endl;
 	o.close();
 	strcpy(buffer, xmlFile.c_str());
 	

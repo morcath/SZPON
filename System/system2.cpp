@@ -23,13 +23,15 @@
 #define CONNECT_WITH_AGENT 1
 #define SEND_REQUEST_TO_AGENT 2
 #define CLOSE_CONNECTION_WITH_AGENT 3
-#define FULL_TESTS 4
+#define INTEGRATION_TESTS 4
+#define FULL_TESTS 5
+
 
 /*STATIC IPv6 ADDRESS*/
-#define IPV6_SYSTEM "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"
-#define IPV6_AGENT1 "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"//jarcin:"fe80::a00:27ff:fee9:fd39"
-#define IPV6_AGENT2 "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"
-#define IPV6_AGENT3 "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"
+#define IPV6_SYSTEM "fe80::b157:9a1b:586f:a90a"
+#define IPV6_AGENT1 "fe80::b157:9a1b:586f:a90a"//jarcin:"fe80::a00:27ff:fee9:fd39"
+#define IPV6_AGENT2 "fe80::1a67:b0ff:fe39:d8"
+#define IPV6_AGENT3 "fe80::b157:9a1b:586f:a90a"
 #define PORT_AGENT 7777
 #define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2
@@ -40,7 +42,7 @@ int chooseAgent(int agentNo);
 int connectToAgent(int agentNo);
 int sendMsg(int socket, char* buffer);
 std::string receiveMsg(int socket, char* buffer);
-int startInstruction(int socket, char* buffer);
+int startInstruction(int socket, char* buffer, std::string min, std::string max);
 int stopInstruction(int socket, char* buffer);
 int sendInstructions(int socket, char* buffer);
 std::string menuToInstructions();
@@ -51,6 +53,12 @@ int responseFromAgents();
 int socketInitialization(int socketIni);
 int waitForAgent (int responseSocket, int mainSocket);
 void receiveXML(int alarmAppearSocket, char* buffer, std::string msg);
+
+//testy
+int test1(int systemSocket, char* buffer, int agentNo);
+int test2(int systemSocket, char* buffer, int agentNo);
+int test3(int systemSocket, char* buffer, int agentNo);
+int test4(int systemSocket, char* buffer, int agentNo);
 
 std::atomic<bool> systemIsRunning (true);
 std::atomic<int> numberOfConnectedAgents (0);
@@ -101,32 +109,34 @@ int main(void)
 				std::cout << "You are not connected wit Agent" << std::endl;
 		
 		}
-		else if(activity == FULL_TESTS)
+		/*else if(activity == INTEGRATION_TESTS)
 		{
 			systemSocket = connectToAgent(1);
-			std::cout << "1. Connect = POSITIVE" << std::endl;
 
-			sendToAgentCloseConnection(systemSocket, buffer);
-			closeSocketSafe(systemSocket);
-			agentNo = 0;
-			std::cout << "2. Disconnect = POSITIVE" << std::endl;
+		}*/
+		else if(activity == FULL_TESTS)
+		{
+			
+			if (test1(systemSocket, buffer, agentNo) == 0)
+				break;
+			sleep(1);
 
-			systemSocket = connectToAgent(1);
-			std::cout << "3. Connect = POSITIVE" << std::endl;
+			if (test2(systemSocket, buffer, agentNo) == 0)
+				break;
+			sleep(1);
 
-			startInstruction(systemSocket, buffer);
-			std::cout << "4. Start = POSITIVE" << std::endl;
+			if (test3(systemSocket, buffer, agentNo) == 0)
+				break;
+			sleep(1);
 
-			sleep(5);
+			if (test4(systemSocket, buffer, agentNo) == 0)
+				break;
+			sleep(1);
 
-			stopInstruction(systemSocket, buffer);
-			std::cout << "5. Stop = POSITIVE" << std::endl;
-
-			sendToAgentCloseConnection(systemSocket, buffer);
-			closeSocketSafe(systemSocket);
-			agentNo = 0;
-			std::cout << "6. Disconnect = POSITIVE" << std::endl;
+			
 		}
+		else
+			activity = END_WORK;
 		
 
 	}while(activity);
@@ -157,12 +167,13 @@ int menu()
 	std::cout << "1 - Connect with Agent" << std::endl;
 	std::cout << "2 - Send request to Agent" << std::endl;
 	std::cout << "3 - Disconnect with Agent" << std::endl;
-	std::cout << "4 - Full tests" << std::endl;
+	std::cout << "4 - Integration tests" << std::endl;
+	std::cout << "5 - Full tests" << std::endl;
 	std::cout << std::endl;
 	std::cout << "Activity: ";
 	std::cin >> menu;
 	std::cout << std::endl;
-	while(menu != "0" and menu != "1" and menu != "2" and menu != "3" and menu != "4")
+	while(menu != "0" and menu != "1" and menu != "2" and menu != "3" and menu != "4" and menu != "5")
 	{
 		std::cout << "Activity: ";
 		std::cin >> menu;
@@ -265,10 +276,10 @@ std::string receiveMsg(int socket, char* buffer)
 	return message;
 }
 
-int startInstruction(int socket, char* buffer)
+int startInstruction(int socket, char* buffer, std::string min, std::string max)
 {
 	std::string request = "3 ";
-	std::string min = "5", max = "50";
+	//std::string min = "5", max = "50";
 	request += min;
 	request += " ";
 	request += max;
@@ -291,10 +302,14 @@ int stopInstruction(int socket, char* buffer)
 	sendMsg(socket,buffer);
 
 	request = receiveMsg(socket, buffer);
-	if(request == "Startstat\n")
-		numberOfConnectedAgents += 1;
+	if(request == "Endstat\n")
+		return 0;
+		//std::cout << "STOOOP\n";
 
-	return 0;
+	//std::string msg = receiveMsg(socket, buffer);
+	//std::cout << msg << " AAAAAAAAAA \n";
+
+	return 1;
 }
 
 int sendInstructions(int socket, char* buffer)
@@ -377,15 +392,14 @@ int responseFromAgents()
 			do {
 				responseSocket = waitForAgent(responseSocket, mainSocket);
 				msg = receiveMsg(responseSocket, buffer);
-
-				std::cout << msg << std::endl;
+				//std::cout << msg << " tuuuuuuuu??????? " << std::endl;
 
 				if(msg == "up\n" && errorRate <= 10)
 				{
 					errorRate += 1;
 					msg = "1";
 					strcpy(buffer, msg.c_str());
-					sendMsg(responseSocket, buffer);		
+					sendMsg(responseSocket, buffer);	
 				}
 				else if(msg == "down\n" && errorRate <= 10)
 				{
@@ -490,4 +504,227 @@ void receiveXML(int socket, char* buffer, std::string msg)
 	std::ofstream o(nameFile);
 	o << xmlFile << std::endl;
 	o.close();
+}
+
+int test1(int systemSocket, char* buffer, int agentNo){
+	std::cout << "\nScenario 1: Connect and Disconnect\n" << std::endl;
+
+	systemSocket = connectToAgent(1);
+	if (systemSocket != -1)
+		std::cout << "1. Connect = POSITIVE" << std::endl;
+	else {
+		std::cout << "1. Connect = NEGATIVE" << std::endl;
+		return 0;
+	}
+		
+	sendToAgentCloseConnection(systemSocket, buffer);
+	if (closeSocketSafe(systemSocket) == 0){
+		agentNo = 0;
+		std::cout << "2. Disconnect = POSITIVE" << std::endl;
+	}
+	else{
+		std::cout << "2. Disconnect = NEGATIVE" << std::endl;
+		return 0;
+	}
+	return 1;
+}
+
+int test2(int systemSocket, char* buffer, int agentNo){
+	std::cout << "\nScenario 2: connect, start measurement, stop measurement, disconnect\n" << std::endl;
+
+	systemSocket = connectToAgent(1);
+	if (systemSocket != -1)
+		std::cout << "1. Connect = POSITIVE" << std::endl;
+	else {
+		std::cout << "1. Connect = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	if(startInstruction(systemSocket, buffer, "5", "50") == 0)
+		std::cout << "2. Start measurement = POSITIVE" << std::endl;
+	else{
+		std::cout << "2. Start measurement = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(5);
+
+	if(stopInstruction(systemSocket, buffer) == 0)
+		std::cout << "3. Stop measurement = POSITIVE" << std::endl;
+	else{
+		std::cout << "3. Stop measurement = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(5);
+
+	sendToAgentCloseConnection(systemSocket, buffer);
+	if (closeSocketSafe(systemSocket) == 0){
+		agentNo = 0;
+		std::cout << "4. Disconnect = POSITIVE" << std::endl;
+	}
+	else{
+		std::cout << "4. Disconnect = NEGATIVE" << std::endl;
+		return 0;
+	}
+	return 1;
+}
+
+int test3(int systemSocket, char* buffer, int agentNo){
+	std::cout << "\nScenario 3: connect, start measurement, warning, stop measurement, disconnect\n" << std::endl;
+
+	systemSocket = connectToAgent(1);
+	if (systemSocket != -1)
+		std::cout << "1. Connect = POSITIVE" << std::endl;
+	else {
+		std::cout << "1. Connect = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	if(startInstruction(systemSocket, buffer, "10", "15") == 0)
+		std::cout << "2. Start measurement = POSITIVE" << std::endl;
+	else{
+		std::cout << "2. Start measurement = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(20);
+
+	if(stopInstruction(systemSocket, buffer) == 0)
+		std::cout << "3. Stop measurement = POSITIVE" << std::endl;
+	else{
+		std::cout << "3. Stop measurement = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(5);
+
+	sendToAgentCloseConnection(systemSocket, buffer);
+	if (closeSocketSafe(systemSocket) == 0){
+		agentNo = 0;
+		std::cout << "4. Disconnect = POSITIVE" << std::endl;
+	}
+	else{
+		std::cout << "4. Disconnect = NEGATIVE" << std::endl;
+		return 0;
+	}
+	return 1;
+}
+
+int test4(int systemSocket, char* buffer, int agentNo){
+	std::cout << "\nScenario 4: Connect with 2 agents\n" << std::endl;
+
+	systemSocket = connectToAgent(2);
+	if (systemSocket != -1)
+		std::cout << "1. Connect Agent 2 = POSITIVE" << std::endl;
+	else {
+		std::cout << "1. Connect Agent 2 = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	if(startInstruction(systemSocket, buffer, "10", "20") == 0)
+		std::cout << "2. Start measurement Agent 2 = POSITIVE" << std::endl;
+	else{
+		std::cout << "2. Start measurement Agent 2 = NEGATIVE" << std::endl;
+		return 0;
+	}
+	sleep(3);
+
+	sendToAgentCloseConnection(systemSocket, buffer);
+	if (closeSocketSafe(systemSocket) == 0){
+		agentNo = 0;
+		std::cout << "3. Disconnect Agent 2 = POSITIVE" << std::endl;
+	}
+	else{
+		std::cout << "3. Disconnect Agent 2 = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+
+	sleep(1);
+
+	systemSocket = connectToAgent(1);
+	if (systemSocket != -1)
+		std::cout << "4. Connect Agent 1 = POSITIVE" << std::endl;
+	else {
+		std::cout << "4. Connect Agent 1 = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	if(startInstruction(systemSocket, buffer, "10", "20") == 0)
+		std::cout << "5. Start measurement Agent 1 = POSITIVE" << std::endl;
+	else{
+		std::cout << "5. Start measurement Agent 1 = NEGATIVE" << std::endl;
+		return 0;
+	}
+	sleep(3);
+	sendToAgentCloseConnection(systemSocket, buffer);
+	if (closeSocketSafe(systemSocket) == 0){
+		agentNo = 0;
+		std::cout << "6. Disconnect Agent 1 = POSITIVE" << std::endl;
+	}
+	else{
+		std::cout << "6. Disconnect Agent 1 = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(20);
+
+	systemSocket = connectToAgent(1);
+	if (systemSocket != -1)
+		std::cout << "7. Connect Agent 1 = POSITIVE" << std::endl;
+	else {
+		std::cout << "7. Connect Agent 1 = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	if(stopInstruction(systemSocket, buffer) == 0)
+		std::cout << "8. Stop measurement Agent 1 = POSITIVE" << std::endl;
+	else{
+		std::cout << "8. Stop measurement Agent 1 = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(5);
+
+	sendToAgentCloseConnection(systemSocket, buffer);
+	if (closeSocketSafe(systemSocket) == 0){
+		agentNo = 0;
+		std::cout << "9. Disconnect Agent 1 = POSITIVE" << std::endl;
+	}
+	else{
+		std::cout << "9. Disconnect Agent 1 = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(3);
+
+	systemSocket = connectToAgent(2);
+	if (systemSocket != -1)
+		std::cout << "10. Connect Agent 2 = POSITIVE" << std::endl;
+	else {
+		std::cout << "10. Connect Agent 2 = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	if(stopInstruction(systemSocket, buffer) == 0)
+		std::cout << "11. Stop measurement Agent 2 = POSITIVE" << std::endl;
+	else{
+		std::cout << "11. Stop measurement Agent 2 = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(5);
+
+	sendToAgentCloseConnection(systemSocket, buffer);
+	if (closeSocketSafe(systemSocket) == 0){
+		agentNo = 0;
+		std::cout << "12. Disconnect Agent 2 = POSITIVE" << std::endl;
+	}
+	else{
+		std::cout << "12. Disconnect Agent 2 = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	return 1;
 }

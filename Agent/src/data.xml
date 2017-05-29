@@ -1,11 +1,29 @@
 <?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
 <plik>
     <Pomiar>
-        <Dane>25</Dane>
-        <Dane>26</Dane>
-        <Dane>25</Dane>
-        <Dane>25</Dane>
-        <Dane>25</Dane>
-        <Dane>26</Dane>
+        <Dane>16</Dane>
+        <Dane>17</Dane>
+        <Dane>18</Dane>
+        <Dane>17</Dane>
+        <Dane>18</Dane>
+        <Dane>17</Dane>
+        <Dane>17</Dane>
+        <Dane>18</Dane>
+        <Dane>19</Dane>
+        <Dane>20</Dane>
+        <Dane>21</Dane>
+        <Dane>20</Dane>
+        <Dane>19</Dane>
+        <Dane>18</Dane>
+        <Dane>17</Dane>
+        <Dane>16</Dane>
+        <Dane>17</Dane>
+        <Dane>16</Dane>
+        <Dane>17</Dane>
+        <Dane>17</Dane>
+        <Dane>16</Dane>
+        <Dane>15</Dane>
+        <Dane>16</Dane>
+        <Dane>15</Dane>
     </Pomiar>
 </plik>
