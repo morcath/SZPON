@@ -59,6 +59,8 @@ int test1(int systemSocket, char* buffer, int agentNo);
 int test2(int systemSocket, char* buffer, int agentNo);
 int test3(int systemSocket, char* buffer, int agentNo);
 int test4(int systemSocket, char* buffer, int agentNo);
+int test5(int systemSocket, char* buffer, int agentNo);
+int test6(int systemSocket, char* buffer, int agentNo);
 
 std::atomic<bool> systemIsRunning (true);
 std::atomic<int> numberOfConnectedAgents (0);
@@ -129,7 +131,15 @@ int main(void)
 				break;
 			sleep(1);
 
-			if (test4(systemSocket, buffer, agentNo) == 0)
+			/*if (test4(systemSocket, buffer, agentNo) == 0)
+				break;
+			sleep(1);*/
+
+			if (test5(systemSocket, buffer, agentNo) == 0)
+				break;
+			sleep(1);
+
+			if (test6(systemSocket, buffer, agentNo) == 0)
 				break;
 			sleep(1);
 
@@ -191,7 +201,7 @@ int chooseAgent(int agentNo)
 	do {	
 
 		std::cout << std::endl;
-		std::cout << "Wybierza agenta - 1,2 lub 3" << std::endl;
+		std::cout << "Wybierz agenta - 1,2 lub 3" << std::endl;
 		std::cin >> in;
 	}while(in != "1" and in != "2" and in != "3");
 	agent = atoi(in.c_str());
@@ -304,11 +314,7 @@ int stopInstruction(int socket, char* buffer)
 	request = receiveMsg(socket, buffer);
 	if(request == "Endstat\n")
 		return 0;
-		//std::cout << "STOOOP\n";
-
-	//std::string msg = receiveMsg(socket, buffer);
-	//std::cout << msg << " AAAAAAAAAA \n";
-
+		
 	return 1;
 }
 
@@ -392,7 +398,7 @@ int responseFromAgents()
 			do {
 				responseSocket = waitForAgent(responseSocket, mainSocket);
 				msg = receiveMsg(responseSocket, buffer);
-				//std::cout << msg << " tuuuuuuuu??????? " << std::endl;
+				std::cout << msg << std::endl;
 
 				if(msg == "up\n" && errorRate <= 10)
 				{
@@ -499,7 +505,7 @@ void receiveXML(int socket, char* buffer, std::string msg)
 	
 	xmlFile = receiveMsg(socket, buffer);
 	
-	std::cout << "Pakiet xml: " << xmlFile << std::endl;
+	std::cout << "xml: " << xmlFile << std::endl;
 	
 	std::ofstream o(nameFile);
 	o << xmlFile << std::endl;
@@ -726,5 +732,87 @@ int test4(int systemSocket, char* buffer, int agentNo){
 		return 0;
 	}
 
+	return 1;
+}
+
+int test5(int systemSocket, char* buffer, int agentNo){
+	std::cout << "\nScenario 5: almost SHUTDOWN\n" << std::endl;
+
+	systemSocket = connectToAgent(1);
+	if (systemSocket != -1)
+		std::cout << "1. Connect = POSITIVE" << std::endl;
+	else {
+		std::cout << "1. Connect = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	if(startInstruction(systemSocket, buffer, "10", "11") == 0)
+		std::cout << "2. Start measurement = POSITIVE" << std::endl;
+	else{
+		std::cout << "2. Start measurement = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(3);
+
+	if(stopInstruction(systemSocket, buffer) == 0)
+		std::cout << "3. Stop measurement = POSITIVE" << std::endl;
+	else{
+		std::cout << "3. Stop measurement = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(5);
+
+	sendToAgentCloseConnection(systemSocket, buffer);
+	if (closeSocketSafe(systemSocket) == 0){
+		agentNo = 0;
+		std::cout << "4. Disconnect = POSITIVE" << std::endl;
+	}
+	else{
+		std::cout << "4. Disconnect = NEGATIVE" << std::endl;
+		return 0;
+	}
+	return 1;
+}
+
+int test6(int systemSocket, char* buffer, int agentNo){
+	std::cout << "\nScenario 5: SHUTDOWN\n" << std::endl;
+
+	systemSocket = connectToAgent(1);
+	if (systemSocket != -1)
+		std::cout << "1. Connect = POSITIVE" << std::endl;
+	else {
+		std::cout << "1. Connect = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	if(startInstruction(systemSocket, buffer, "10", "11") == 0)
+		std::cout << "2. Start measurement = POSITIVE" << std::endl;
+	else{
+		std::cout << "2. Start measurement = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(20);
+
+	if(stopInstruction(systemSocket, buffer) == 0)
+		std::cout << "3. Stop measurement = POSITIVE" << std::endl;
+	else{
+		std::cout << "3. Stop measurement = NEGATIVE" << std::endl;
+		return 0;
+	}
+
+	sleep(5);
+
+	sendToAgentCloseConnection(systemSocket, buffer);
+	if (closeSocketSafe(systemSocket) == 0){
+		agentNo = 0;
+		std::cout << "4. Disconnect = POSITIVE" << std::endl;
+	}
+	else{
+		std::cout << "4. Disconnect = NEGATIVE" << std::endl;
+		return 0;
+	}
 	return 1;
 }
