@@ -12,12 +12,21 @@
 #include <atomic>
 #include <exception>
 
+/**
+ * Agent przekazujący informacje serwerowi o maszynie
+ * @author Aleksander Tym
+ * @zespol: Aleksander Tym, Marcin Janeczko, Aleksandra Rybak, Katarzyna Romasevska, Bartlomiej Przewozniak
+ * @data: kwiecien-maj 2017
+ * Program jest czescia projektu SZPON
+ */
+
 /*STATIC IPv6 ADDRESS*/
-#define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93"//jarcin:"fe80::a00:27ff:fee9:fd39" 
-#define IPV6_SYSTEM "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_AGENT "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"//jarcin:"fe80::a00:27ff:fee9:fd39" 
+#define IPV6_SYSTEM "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"
 #define PORT_AGENT 7777
 #define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2
+#define AGENT_NO_XML "xml1\n"
 
 void resetParameters(std::string whichParam);
 int agentInitialization(int mainSocket, char* buffer);
@@ -31,6 +40,7 @@ void sendToSystem();
 int setSendSocket();
 int sendInstructions(int socket, char* buffer, std::string info);
 void sendFile(int socket, char* buffer);
+void writeToControlFile(std::string instructions);
 
 
 std::atomic<bool> connectedWithSystem (false);
@@ -137,6 +147,8 @@ std::string receiveInstructions(int socket, char* buffer)
 
 	instructions = receiveMsg(socket, buffer);
 
+	std::cout << "XDDDDD: " << instructions << std::endl;
+
 	if(instructions == "quit\n" or instructions == "end")
 		return instructions;
 
@@ -202,6 +214,7 @@ void sendToSystem()
 {
 	int sendSocket;
 	char buffer[1024];
+	std::string instructions;
 
 	do{
 		std::ifstream fileToRead;
@@ -215,25 +228,47 @@ void sendToSystem()
 			{
 				sendSocket = setSendSocket();	
 				sendInstructions(sendSocket, buffer, "up\n");
+				instructions = receiveMsg(sendSocket, buffer);
+
+				if(instructions == "end\n")
+				{
+					instructions = "0";
+					writeToControlFile(instructions);
+					exit(0);
+				}
+
+				writeToControlFile(instructions);
 				closeSocketSafe(sendSocket);
 			}
 			else if (output == '2')
 			{
 				sendSocket = setSendSocket();
 				sendInstructions(sendSocket, buffer, "down\n");
+				instructions = receiveMsg(sendSocket, buffer);
+
+				if(instructions == "end\n")
+				{
+					instructions = "0";
+					writeToControlFile(instructions);
+					exit(0);
+				}
+
+				writeToControlFile(instructions);
 				closeSocketSafe(sendSocket);
 			}
 			else if (output == '3')
 			{
 				sendSocket = setSendSocket();
 				sendInstructions(sendSocket, buffer, "ok\n");
+				instructions = receiveMsg(sendSocket, buffer);
+				writeToControlFile(instructions);
 				resetParameters("out");
 				closeSocketSafe(sendSocket);
 			}
 			else if (output == '4')
 			{
 				sendSocket = setSendSocket();
-				sendInstructions(sendSocket, buffer, "xml1\n");
+				sendInstructions(sendSocket, buffer, AGENT_NO_XML);
 				sleep(1);
 				sendFile(sendSocket, buffer);
 				resetParameters("all");
@@ -305,4 +340,11 @@ void sendFile(int socket, char* buffer)
 	strcpy(buffer, xmlFile.c_str());
 	
 	sendMsg(socket, buffer);
+}
+
+void writeToControlFile(std::string instructions)
+{
+	std::ofstream o("src/in");
+	o << instructions << std::endl;
+	o.close();
 }

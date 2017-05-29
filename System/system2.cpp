@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -10,17 +11,25 @@
 #include <thread>
 #include <atomic>
 
+/**
+ * Serwer nadzorujący działanie agentów kontrolujących maszynę
+ * @author Aleksander Tym
+ * @zespol: Aleksander Tym, Marcin Janeczko, Aleksandra Rybak, Katarzyna Romasevska, Bartlomiej Przewozniak
+ * @data: kwiecien-maj 2017
+ * Program jest czescia projektu SZPON
+ */
+
 #define END_WORK 0
 #define CONNECT_WITH_AGENT 1
 #define SEND_REQUEST_TO_AGENT 2
 #define CLOSE_CONNECTION_WITH_AGENT 3
-#define CLOSE_AGENT 4
+#define FULL_TESTS 4
 
 /*STATIC IPv6 ADDRESS*/
-#define IPV6_SYSTEM "fe80::eea3:3ace:f5bd:af93"
-#define IPV6_AGENT1 "fe80::eea3:3ace:f5bd:af93"//jarcin:"fe80::a00:27ff:fee9:fd39"
-#define IPV6_AGENT2 "fe80::eea3:3ace:f5bd:af93"
-#define IPV6_AGENT3 "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_SYSTEM "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"
+#define IPV6_AGENT1 "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"//jarcin:"fe80::a00:27ff:fee9:fd39"
+#define IPV6_AGENT2 "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"
+#define IPV6_AGENT3 "2a02:a319:c25f:fc00:612a:5e80:c49:6e8"
 #define PORT_AGENT 7777
 #define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2
@@ -31,6 +40,8 @@ int chooseAgent(int agentNo);
 int connectToAgent(int agentNo);
 int sendMsg(int socket, char* buffer);
 std::string receiveMsg(int socket, char* buffer);
+int startInstruction(int socket, char* buffer);
+int stopInstruction(int socket, char* buffer);
 int sendInstructions(int socket, char* buffer);
 std::string menuToInstructions();
 int sendToAgentCloseConnection(int socket, char* buffer);
@@ -88,6 +99,33 @@ int main(void)
 			}
 			else
 				std::cout << "You are not connected wit Agent" << std::endl;
+		
+		}
+		else if(activity == FULL_TESTS)
+		{
+			systemSocket = connectToAgent(1);
+			std::cout << "1. Connect = POSITIVE" << std::endl;
+
+			sendToAgentCloseConnection(systemSocket, buffer);
+			closeSocketSafe(systemSocket);
+			agentNo = 0;
+			std::cout << "2. Disconnect = POSITIVE" << std::endl;
+
+			systemSocket = connectToAgent(1);
+			std::cout << "3. Connect = POSITIVE" << std::endl;
+
+			startInstruction(systemSocket, buffer);
+			std::cout << "4. Start = POSITIVE" << std::endl;
+
+			sleep(5);
+
+			stopInstruction(systemSocket, buffer);
+			std::cout << "5. Stop = POSITIVE" << std::endl;
+
+			sendToAgentCloseConnection(systemSocket, buffer);
+			closeSocketSafe(systemSocket);
+			agentNo = 0;
+			std::cout << "6. Disconnect = POSITIVE" << std::endl;
 		}
 		
 
@@ -119,11 +157,12 @@ int menu()
 	std::cout << "1 - Connect with Agent" << std::endl;
 	std::cout << "2 - Send request to Agent" << std::endl;
 	std::cout << "3 - Disconnect with Agent" << std::endl;
+	std::cout << "4 - Full tests" << std::endl;
 	std::cout << std::endl;
 	std::cout << "Activity: ";
 	std::cin >> menu;
 	std::cout << std::endl;
-	while(menu != "0" and menu != "1" and menu != "2" and menu != "3")
+	while(menu != "0" and menu != "1" and menu != "2" and menu != "3" and menu != "4")
 	{
 		std::cout << "Activity: ";
 		std::cin >> menu;
@@ -226,6 +265,38 @@ std::string receiveMsg(int socket, char* buffer)
 	return message;
 }
 
+int startInstruction(int socket, char* buffer)
+{
+	std::string request = "3 ";
+	std::string min = "5", max = "50";
+	request += min;
+	request += " ";
+	request += max;
+
+	strcpy(buffer, request.c_str());
+	sendMsg(socket,buffer);
+
+	request = receiveMsg(socket, buffer);
+	if(request == "Startstat\n")
+		numberOfConnectedAgents += 1;
+
+	return 0;
+}
+
+int stopInstruction(int socket, char* buffer)
+{
+	std::string request = "4";
+
+	strcpy(buffer, request.c_str());
+	sendMsg(socket,buffer);
+
+	request = receiveMsg(socket, buffer);
+	if(request == "Startstat\n")
+		numberOfConnectedAgents += 1;
+
+	return 0;
+}
+
 int sendInstructions(int socket, char* buffer)
 {
 	std::string request;
@@ -309,19 +380,26 @@ int responseFromAgents()
 
 				std::cout << msg << std::endl;
 
-				if(msg == "up\n")
+				if(msg == "up\n" && errorRate <= 10)
 				{
 					errorRate += 1;
-					//@TODO chłodzenie		
+					msg = "1";
+					strcpy(buffer, msg.c_str());
+					sendMsg(responseSocket, buffer);		
 				}
-				else if(msg == "down\n")
+				else if(msg == "down\n" && errorRate <= 10)
 				{
 					errorRate += 1;
-					//@TODO grzanie
+					msg = "2";
+					strcpy(buffer, msg.c_str());
+					sendMsg(responseSocket, buffer);
 				}
 				else if(msg == "ok\n")
 				{
 					errorRate = 0;
+					msg = "3";
+					strcpy(buffer, msg.c_str());
+					sendMsg(responseSocket, buffer);
 					closeSocketSafe(responseSocket);
 					break;
 				}
@@ -332,13 +410,18 @@ int responseFromAgents()
 					closeSocketSafe(responseSocket);
 					break;
 				}
-				closeSocketSafe(responseSocket);
-
-				if(errorRate > 10)
+				else if(errorRate > 10)
 				{
 					std::cout << "SHUTDOWN" << std::endl;
-					exit(1);
-				}	
+					msg = "end\n";
+					strcpy(buffer, msg.c_str());
+					sendMsg(responseSocket, buffer);
+					closeSocketSafe(responseSocket);
+					systemIsRunning = false;
+					break;
+				}
+				closeSocketSafe(responseSocket);
+	
 			} while(numberOfConnectedAgents > 0);
 
 		}
