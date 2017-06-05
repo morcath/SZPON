@@ -21,12 +21,15 @@
  */
 
 /*STATIC IPv6 ADDRESS*/
-#define IPV6_AGENT "fe80::b157:9a1b:586f:a90a"//jarcin:"fe80::a00:27ff:fee9:fd39" 
-#define IPV6_SYSTEM "fe80::b157:9a1b:586f:a90a"
+#define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_SYSTEM "fe80::eea3:3ace:f5bd:af93"
 #define PORT_AGENT 7777
 #define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2
 #define AGENT_NO_XML "xml1\n"
+#define AGENT_NO_UP "up1\n"
+#define AGENT_NO_DOWN "down1\n"
+#define AGENT_NO_OK "ok1\n"
 
 void resetParameters(std::string whichParam);
 int agentInitialization(int mainSocket, char* buffer);
@@ -227,7 +230,7 @@ void sendToSystem()
 			if (output == '1')
 			{
 				sendSocket = setSendSocket();	
-				sendInstructions(sendSocket, buffer, "up\n");
+				sendInstructions(sendSocket, buffer, AGENT_NO_UP);
 				instructions = receiveMsg(sendSocket, buffer);
 
 				if(instructions == "end\n")
@@ -243,7 +246,7 @@ void sendToSystem()
 			else if (output == '2')
 			{
 				sendSocket = setSendSocket();
-				sendInstructions(sendSocket, buffer, "down\n");
+				sendInstructions(sendSocket, buffer, AGENT_NO_DOWN);
 				instructions = receiveMsg(sendSocket, buffer);
 
 				if(instructions == "end\n")
@@ -259,7 +262,7 @@ void sendToSystem()
 			else if (output == '3')
 			{
 				sendSocket = setSendSocket();
-				sendInstructions(sendSocket, buffer, "ok\n");
+				sendInstructions(sendSocket, buffer, AGENT_NO_OK);
 				instructions = receiveMsg(sendSocket, buffer);
 				writeToControlFile(instructions);
 				resetParameters("out");

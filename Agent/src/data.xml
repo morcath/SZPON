@@ -1,26 +1,13 @@
 <?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
 <plik>
     <Pomiar>
+        <Dane>13</Dane>
         <Dane>12</Dane>
         <Dane>13</Dane>
-        <Dane>13</Dane>
+        <Dane>12</Dane>
+        <Dane>11</Dane>
         <Dane>12</Dane>
         <Dane>11</Dane>
         <Dane>12</Dane>
-        <Dane>11</Dane>
-        <Dane>10</Dane>
-        <Dane>9</Dane>
-        <Dane>10</Dane>
-        <Dane>11</Dane>
-        <Dane>12</Dane>
-        <Dane>13</Dane>
-        <Dane>14</Dane>
-        <Dane>14</Dane>
-        <Dane>14</Dane>
-        <Dane>15</Dane>
-        <Dane>14</Dane>
-        <Dane>14</Dane>
-        <Dane>14</Dane>
-        <Dane>13</Dane>
     </Pomiar>
 </plik>

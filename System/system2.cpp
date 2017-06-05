@@ -28,10 +28,10 @@
 
 
 /*STATIC IPv6 ADDRESS*/
-#define IPV6_SYSTEM "fe80::b157:9a1b:586f:a90a"
-#define IPV6_AGENT1 "fe80::b157:9a1b:586f:a90a"//jarcin:"fe80::a00:27ff:fee9:fd39"
-#define IPV6_AGENT2 "fe80::1a67:b0ff:fe39:d8"
-#define IPV6_AGENT3 "fe80::b157:9a1b:586f:a90a"
+#define IPV6_SYSTEM "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_AGENT1 "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_AGENT2 "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_AGENT3 "fe80::eea3:3ace:f5bd:af93"
 #define PORT_AGENT 7777
 #define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2
@@ -386,6 +386,9 @@ int responseFromAgents()
 	int mainSocket, responseSocket;
 	char buffer[1024];
 	int errorRate = 0;
+	int errorRate1 = 0;
+	int errorRate2 = 0;
+	int errorRate3 = 0;
 	std::string msg;
 
 	mainSocket = socketInitialization(mainSocket);
@@ -400,23 +403,93 @@ int responseFromAgents()
 				msg = receiveMsg(responseSocket, buffer);
 				std::cout << msg << std::endl;
 
-				if(msg == "up\n" && errorRate <= 10)
+				if(msg[0] == 'u')
 				{
-					errorRate += 1;
-					msg = "1";
-					strcpy(buffer, msg.c_str());
-					sendMsg(responseSocket, buffer);	
+					if(msg [2] == '1')
+					{
+						errorRate1 += 1;
+						errorRate = errorRate1;
+
+					}
+					else if(msg [2] == '2')
+					{
+						errorRate2 += 1;
+						errorRate = errorRate2;
+
+					}
+					else if(msg [2] == '3')
+					{
+						errorRate3 += 1;
+						errorRate = errorRate3;
+
+					}
+					
+					if (errorRate < 10)
+					{		
+						msg = "1";
+						strcpy(buffer, msg.c_str());
+						sendMsg(responseSocket, buffer);
+					}
+					else
+					{
+						std::cout << "SHUTDOWN" << std::endl;
+						msg = "end\n";
+						strcpy(buffer, msg.c_str());
+						sendMsg(responseSocket, buffer);
+						closeSocketSafe(responseSocket);
+						systemIsRunning = false;
+						break;
+					}	
 				}
-				else if(msg == "down\n" && errorRate <= 10)
+				else if(msg[0] == 'd')
 				{
-					errorRate += 1;
-					msg = "2";
-					strcpy(buffer, msg.c_str());
-					sendMsg(responseSocket, buffer);
+
+					if(msg [4] == '1')
+					{
+						errorRate1 += 1;
+						errorRate = errorRate1;
+
+					}
+					else if(msg [4] == '2')
+					{
+						errorRate2 += 1;
+						errorRate = errorRate2;
+
+					}
+					else if(msg [4] == '3')
+					{
+						errorRate3 += 1;
+						errorRate = errorRate3;
+
+					}					
+
+					if(errorRate < 10)
+					{
+						msg = "2";
+						strcpy(buffer, msg.c_str());
+						sendMsg(responseSocket, buffer);
+					}
+					else
+					{
+						std::cout << "SHUTDOWN" << std::endl;
+						msg = "end\n";
+						strcpy(buffer, msg.c_str());
+						sendMsg(responseSocket, buffer);
+						closeSocketSafe(responseSocket);
+						systemIsRunning = false;
+						break;
+					}
 				}
-				else if(msg == "ok\n")
+				else if(msg[0] == 'o')
 				{
-					errorRate = 0;
+					if(msg [2] == '1')
+						errorRate1 = 0;
+					else if(msg [2] == '2')
+						errorRate2 = 0;
+					else if(msg [2] == '3')
+						errorRate3 = 0;
+					
+
 					msg = "3";
 					strcpy(buffer, msg.c_str());
 					sendMsg(responseSocket, buffer);
@@ -428,16 +501,6 @@ int responseFromAgents()
 				{
 					receiveXML(responseSocket, buffer, msg);
 					closeSocketSafe(responseSocket);
-					break;
-				}
-				else if(errorRate > 10)
-				{
-					std::cout << "SHUTDOWN" << std::endl;
-					msg = "end\n";
-					strcpy(buffer, msg.c_str());
-					sendMsg(responseSocket, buffer);
-					closeSocketSafe(responseSocket);
-					systemIsRunning = false;
 					break;
 				}
 				closeSocketSafe(responseSocket);
@@ -505,8 +568,7 @@ void receiveXML(int socket, char* buffer, std::string msg)
 	
 	xmlFile = receiveMsg(socket, buffer);
 	
-	std::cout << "xml: " << xmlFile << std::endl;
-	
+
 	std::ofstream o(nameFile);
 	o << xmlFile << std::endl;
 	o.close();
