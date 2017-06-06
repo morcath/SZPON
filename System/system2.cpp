@@ -29,9 +29,9 @@
 
 /*STATIC IPv6 ADDRESS*/
 #define IPV6_SYSTEM "fe80::eea3:3ace:f5bd:af93"
-#define IPV6_AGENT1 "fe80::eea3:3ace:f5bd:af93"
-#define IPV6_AGENT2 "fe80::eea3:3ace:f5bd:af93"
-#define IPV6_AGENT3 "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_AGENT1 "fe80::756d:93ce:7d41:67e5"
+#define IPV6_AGENT2 "fe80::be43:35f5:f120:bdfd"
+#define IPV6_AGENT3 "fe80::53c1:bad5:5ac5:6142"
 #define PORT_AGENT 7777
 #define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2
@@ -410,17 +410,26 @@ int responseFromAgents()
 						errorRate1 += 1;
 						errorRate = errorRate1;
 
+						if(errorRate >= 10)
+							errorRate1 = 0;
+
 					}
 					else if(msg [2] == '2')
 					{
 						errorRate2 += 1;
 						errorRate = errorRate2;
 
+						if(errorRate >= 10)
+							errorRate2 = 0;
+
 					}
 					else if(msg [2] == '3')
 					{
 						errorRate3 += 1;
 						errorRate = errorRate3;
+
+						if(errorRate >= 10)
+							errorRate3 = 0;
 
 					}
 					
@@ -436,8 +445,8 @@ int responseFromAgents()
 						msg = "end\n";
 						strcpy(buffer, msg.c_str());
 						sendMsg(responseSocket, buffer);
+						numberOfConnectedAgents -= 1;
 						closeSocketSafe(responseSocket);
-						systemIsRunning = false;
 						break;
 					}	
 				}
@@ -449,17 +458,26 @@ int responseFromAgents()
 						errorRate1 += 1;
 						errorRate = errorRate1;
 
+						if(errorRate >= 10)
+							errorRate1 = 0;
+
 					}
 					else if(msg [4] == '2')
 					{
 						errorRate2 += 1;
 						errorRate = errorRate2;
 
+						if(errorRate >= 10)
+							errorRate2 = 0;
+
 					}
 					else if(msg [4] == '3')
 					{
 						errorRate3 += 1;
 						errorRate = errorRate3;
+
+						if(errorRate >= 10)
+							errorRate3 = 0;
 
 					}					
 
@@ -475,8 +493,8 @@ int responseFromAgents()
 						msg = "end\n";
 						strcpy(buffer, msg.c_str());
 						sendMsg(responseSocket, buffer);
+						numberOfConnectedAgents -= 1;
 						closeSocketSafe(responseSocket);
-						systemIsRunning = false;
 						break;
 					}
 				}
@@ -564,13 +582,19 @@ void receiveXML(int socket, char* buffer, std::string msg)
 	std::string nameFile = "data";
 	nameFile += msg[3];
 	nameFile.append(".xml");
-	
-	
-	xmlFile = receiveMsg(socket, buffer);
-	
 
 	std::ofstream o(nameFile);
-	o << xmlFile << std::endl;
+	
+	while(true)
+	{
+		xmlFile = receiveMsg(socket, buffer);
+		if(xmlFile == "endXml\n")
+			break;
+
+		o << xmlFile;
+	}
+	
+
 	o.close();
 }
 
