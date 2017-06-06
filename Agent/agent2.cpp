@@ -21,7 +21,7 @@
  */
 
 /*STATIC IPv6 ADDRESS*/
-#define IPV6_AGENT "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_AGENT "fe80::756d:93ce:7d41:67e5"
 #define IPV6_SYSTEM "fe80::eea3:3ace:f5bd:af93"
 #define PORT_AGENT 7777
 #define PORT_ALARM 8888
@@ -237,6 +237,8 @@ void sendToSystem()
 				{
 					instructions = "0";
 					writeToControlFile(instructions);
+					closeSocketSafe(sendSocket);
+					runAgent = false;
 					exit(0);
 				}
 
@@ -253,6 +255,8 @@ void sendToSystem()
 				{
 					instructions = "0";
 					writeToControlFile(instructions);
+					closeSocketSafe(sendSocket);
+					runAgent = false;
 					exit(0);
 				}
 
@@ -330,6 +334,10 @@ void sendFile(int socket, char* buffer)
 	std::ifstream o("src/data.xml");
 	std::string xmlFile;
 	std::string xmlLine;
+	std::string endXml = "endXml\n";
+
+	std::string sendXml;
+	int first = 0;
 	
 	while(!o.eof())
 	{
@@ -338,10 +346,20 @@ void sendFile(int socket, char* buffer)
 		xmlFile.append(xmlLine);
 	}
 
-	std::cout << "xmlFile" << std::endl;
 	o.close();
-	strcpy(buffer, xmlFile.c_str());
+
+	while(first < xmlFile.size())
+	{
+		sendXml = xmlFile.substr(first,1020);
+		strcpy(buffer, sendXml.c_str());
+		first += 1020;
 	
+		strcpy(buffer, sendXml.c_str());
+		std::cout << sendXml << std::endl;
+		sendMsg(socket, buffer);
+	}
+
+	strcpy(buffer, endXml.c_str());
 	sendMsg(socket, buffer);
 }
 
