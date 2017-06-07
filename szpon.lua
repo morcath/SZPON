@@ -37,20 +37,41 @@ function szpon_proto.dissector(buffer, pinfo, tree)
         elseif arg == 'Endstat' then
             subtree:add(buffer(offset, arg:len()), "End measuring")       
        
-        elseif arg == 'up' then
-            subtree:add(buffer(offset, arg:len()), "Command: 'up'")
+        elseif arg == 'up1' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'up1'")
  
-        elseif arg == 'down' then
-            subtree:add(buffer(offset, arg:len()), "Command: 'down'")
+        elseif arg == 'down1' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'down1'")
 
-        elseif arg == 'ok' then
-            subtree:add(buffer(offset, arg:len()), "Command: 'ok'")
+        elseif arg == 'ok1' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'ok1'")
+        
+        elseif arg == 'up2' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'up2'")
+ 
+        elseif arg == 'down2' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'down2'")
 
-        elseif arg == 'xml' then
-            subtree:add(buffer(offset, arg:len()), "Command: 'xml'")
+        elseif arg == 'ok2' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'ok2'")
+             
+        elseif arg == 'up3' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'up3'")
+ 
+        elseif arg == 'down3' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'down3'")
+
+        elseif arg == 'ok3' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'ok3'")
 
         elseif arg == 'xml1' then
             subtree:add(buffer(offset, arg:len()), "Command: 'xml1'")
+
+        elseif arg == 'xml2' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'xml2'")
+
+        elseif arg == 'xml3' then
+            subtree:add(buffer(offset, arg:len()), "Command: 'xml3'")
 
         elseif arg == '<?xml' then
             subtree:add(buffer(offset, arg:len()), "Generated data xml")
