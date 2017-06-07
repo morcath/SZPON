@@ -21,8 +21,8 @@
  */
 
 /*STATIC IPv6 ADDRESS*/
-#define IPV6_AGENT "fe80::756d:93ce:7d41:67e5"
-#define IPV6_SYSTEM "fe80::eea3:3ace:f5bd:af93"
+#define IPV6_AGENT "92.60.136.194 "
+#define IPV6_SYSTEM "92.60.136.194 "
 #define PORT_AGENT 7777
 #define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2

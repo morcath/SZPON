@@ -28,10 +28,10 @@
 
 
 /*STATIC IPv6 ADDRESS*/
-#define IPV6_SYSTEM "fe80::eea3:3ace:f5bd:af93"
-#define IPV6_AGENT1 "fe80::756d:93ce:7d41:67e5"
-#define IPV6_AGENT2 "fe80::be43:35f5:f120:bdfd"
-#define IPV6_AGENT3 "fe80::53c1:bad5:5ac5:6142"
+#define IPV6_SYSTEM "92.60.136.194 "
+#define IPV6_AGENT1 "92.60.136.194 "
+#define IPV6_AGENT2 "92.60.136.194 "
+#define IPV6_AGENT3 "92.60.136.194 "
 #define PORT_AGENT 7777
 #define PORT_ALARM 8888
 #define LOCAL_INTERFACE_INDEX 2
@@ -111,11 +111,10 @@ int main(void)
 				std::cout << "You are not connected wit Agent" << std::endl;
 		
 		}
-		/*else if(activity == INTEGRATION_TESTS)
+		else if(activity == INTEGRATION_TESTS)
 		{
-			systemSocket = connectToAgent(1);
-
-		}*/
+			test2(systemSocket, buffer, agentNo);
+		}
 		else if(activity == FULL_TESTS)
 		{
 			
